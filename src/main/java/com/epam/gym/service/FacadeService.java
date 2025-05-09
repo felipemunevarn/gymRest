@@ -1,17 +1,12 @@
 package com.epam.gym.service;
 
 import com.epam.gym.dto.*;
-import com.epam.gym.entity.Trainee;
-import com.epam.gym.entity.Trainer;
-import com.epam.gym.entity.Training;
-import com.epam.gym.entity.User;
+import com.epam.gym.entity.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.epam.gym.util.UsernamePasswordUtil;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class FacadeService {
@@ -19,19 +14,23 @@ public class FacadeService {
     private final TraineeService traineeService;
     private final TrainerService trainerService;
     private final TrainingService trainingService;
-//    private final UserService userService;
+    private final TrainingTypeService trainingTypeService;
 
     @Autowired
     public FacadeService(TraineeService traineeService,
                          TrainerService trainerService,
-                         TrainingService trainingService
-//                         , UserService userService
+                         TrainingService trainingService,
+                         TrainingTypeService trainingTypeService
     ){
         this.traineeService = traineeService;
         this.trainerService = trainerService;
-//        this.userService = userService;
         this.trainingService = trainingService;
+        this.trainingTypeService = trainingTypeService;
     }
+
+    ////////////////////////////////////////////////
+    //////////// TRAINEE ///////////////////////////
+    ////////////////////////////////////////////////
 
     @Transactional
     public TraineeRegistrationResponse registerTrainee(TraineeRegistrationRequest request) {
@@ -73,25 +72,41 @@ public class FacadeService {
         return getTraineeByUsername(request.username());
     }
 
-//    @Transactional
-//    public void deleteTraineeCompletely(String username) {
-//        List<Training> trainings = trainingService.getTraineeTrainings(username,
-//                null,
-//                null,
-//                null,
-//                null);
-//        trainingService.deleteTrainings(trainings);
-//        traineeService.deleteTrainee(username);
-//    }
-
     @Transactional
     public void deleteTrainee(String username) {
-//        List<Training> trainings = trainingService.getTraineeTrainings(username,
-//                null,
-//                null,
-//                null,
-//                null);
-//        trainingService.deleteTrainings(trainings);
         traineeService.deleteTrainee(username);
     }
+
+    ////////////////////////////////////////////////
+    //////////// TRAINER ///////////////////////////
+    ////////////////////////////////////////////////
+
+    @Transactional
+    public TrainerRegistrationResponse registerTrainer(TrainerRegistrationRequest request) {
+//        Optional<TrainingType> optTrainingType = trainingTypeRepository.findByType(TrainingTypeEnum.valueOf(request.specialization()));
+//        Trainer trainer = trainerService.createTrainer(request.firstName(),
+//                request.lastName(),
+//                request.address());
+//        return new TrainerRegistrationResponse(trainer.getUser().getUsername(),
+//                trainer.getUser().getPassword());
+        return null;
+    }
+
+    ////////////////////////////////////////////////
+    //////////// TRAINING //////////////////////////
+    ////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////
+    //////////// TRAINING TYPE /////////////////////
+    ////////////////////////////////////////////////
+
+    @Transactional
+    public List<TrainingTypeResponse> findAllTrainingTypes() {
+        List<TrainingType> trainingTypes = trainingTypeService.findAllTrainingTypes();
+        return trainingTypes.stream().
+                map(trainingType -> new TrainingTypeResponse(trainingType.getId(),
+                        trainingType.getType().toString())).
+                toList();
+    }
+
 }
