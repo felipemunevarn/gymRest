@@ -38,7 +38,7 @@ public class TrainerManagementService {
         User user = userService.createUser(request.firstName(), request.lastName());
         Optional<TrainingType> optTrainingType = trainingTypeRepository.findByType(TrainingTypeEnum.valueOf(request.specialization()));
 //        TrainingType tt = new TrainingType(TrainingTypeEnum.valueOf(request.specialization()));
-        trainerService.createTrainer(optTrainingType.get(), user);
+//        trainerService.createTrainer(optTrainingType.get(), user);
         return new TrainerRegistrationResponse(user.getUsername(), user.getPassword());
     }
 

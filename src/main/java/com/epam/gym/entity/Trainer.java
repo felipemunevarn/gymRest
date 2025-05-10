@@ -2,6 +2,9 @@ package com.epam.gym.entity;
 
 import jakarta.persistence.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "trainers")
 public class Trainer {
@@ -18,9 +21,13 @@ public class Trainer {
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false, unique = true)
     private User user;
 
+    @ManyToMany(mappedBy = "trainers")
+    private Set<Trainee> trainees = new HashSet<>();
+
     public Long getId() { return id; }
     public TrainingType getTrainingType() { return trainingType; }
     public User getUser() { return user; }
+    public Set<Trainee> getTrainees() { return trainees; }
 
     protected Trainer() {}
 
@@ -28,6 +35,7 @@ public class Trainer {
         this.id = builder.id;
         this.trainingType = builder.trainingType;
         this.user = builder.user;
+        this.trainees = builder.trainees;
     }
 
     public static Builder builder() {
@@ -42,13 +50,15 @@ public class Trainer {
         private Long id;
         private TrainingType trainingType;
         private User user;
+        private Set<Trainee> trainees;
 
         public Builder() {}
 
-        public Builder(Trainer trainee) {
-            this.id = trainee.id;
-            this.trainingType = trainee.trainingType;
-            this.user = trainee.user;
+        public Builder(Trainer trainer) {
+            this.id = trainer.id;
+            this.trainingType = trainer.trainingType;
+            this.user = trainer.user;
+            this.trainees = trainer.trainees;
         }
 
         public Builder id(Long id) {
@@ -63,6 +73,11 @@ public class Trainer {
 
         public Builder user(User user) {
             this.user = user;
+            return this;
+        }
+
+        public Builder trainees(Set<Trainee> trainees) {
+            this.trainees = trainees;
             return this;
         }
 

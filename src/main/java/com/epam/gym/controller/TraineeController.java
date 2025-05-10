@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping(value = "/api/trainees")
+@RequestMapping(value = "/api/v1/trainees")
 public class TraineeController {
 
     private final FacadeService facadeService;

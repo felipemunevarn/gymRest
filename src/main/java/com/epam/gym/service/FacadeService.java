@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class FacadeService {
@@ -45,8 +46,7 @@ public class FacadeService {
     @Transactional
     public TraineeProfileResponse getTraineeByUsername(String username) {
         Trainee trainee = traineeService.findTraineeByUsername(username);
-        List<Trainer> trainers = trainingService.getTrainersByTraineeUsername(username);
-        List<TrainerDto> trainersDto = trainers.stream().
+        List<TrainerDto> trainersDto = trainee.getTrainers().stream().
                 map(trainer -> new TrainerDto(trainer.getUser().getUsername(),
                         trainer.getUser().getFirstName(),
                         trainer.getUser().getLastName(),
@@ -83,13 +83,12 @@ public class FacadeService {
 
     @Transactional
     public TrainerRegistrationResponse registerTrainer(TrainerRegistrationRequest request) {
-//        Optional<TrainingType> optTrainingType = trainingTypeRepository.findByType(TrainingTypeEnum.valueOf(request.specialization()));
-//        Trainer trainer = trainerService.createTrainer(request.firstName(),
-//                request.lastName(),
-//                request.address());
-//        return new TrainerRegistrationResponse(trainer.getUser().getUsername(),
-//                trainer.getUser().getPassword());
-        return null;
+        TrainingType trainingType = trainingTypeService.findByType(request.specialization());
+        Trainer trainer = trainerService.createTrainer(request.firstName(),
+                request.lastName(),
+                trainingType);
+        return new TrainerRegistrationResponse(trainer.getUser().getUsername(),
+                trainer.getUser().getPassword());
     }
 
     ////////////////////////////////////////////////

@@ -18,7 +18,7 @@ import java.time.LocalDate;
 @Service
 public class TraineeService {
 
-    private static final Logger log = LoggerFactory.getLogger(UserService.class);
+    private static final Logger log = LoggerFactory.getLogger(TraineeService.class);
     private final TraineeRepository traineeRepository;
     private final UsernamePasswordUtil usernamePasswordUtil;
 

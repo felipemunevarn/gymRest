@@ -1,10 +1,11 @@
 package com.epam.gym.service;
 
-import com.epam.gym.entity.Trainee;
 import com.epam.gym.entity.Trainer;
 import com.epam.gym.entity.TrainingType;
 import com.epam.gym.entity.User;
+import com.epam.gym.exception.TraineeCreationException;
 import com.epam.gym.repository.TrainerRepository;
+import com.epam.gym.util.UsernamePasswordUtil;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
@@ -13,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,53 +22,46 @@ public class TrainerService {
 
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
     private final TrainerRepository trainerRepository;
-//    private final TrainingTypeRepository trainingTypeRepository;
-//    private final UserService userService;
-//    private final UsernamePasswordUtil usernamePasswordUtil;
+    private final UsernamePasswordUtil usernamePasswordUtil;
 
     @Autowired
-    public TrainerService(TrainerRepository trainerRepository /*,
-                          TrainingTypeRepository trainingTypeRepository,
-                          UserService userService,
-                          UsernamePasswordUtil usernamePasswordUtil */) {
+    public TrainerService(TrainerRepository trainerRepository,
+                          UsernamePasswordUtil usernamePasswordUtil) {
         this.trainerRepository = trainerRepository;
-//        this.trainingTypeRepository = trainingTypeRepository;
-//        this.userService = userService;
-//        this.usernamePasswordUtil = usernamePasswordUtil;
+        this.usernamePasswordUtil = usernamePasswordUtil;
     }
 
     @Transactional
-    public void createTrainer(/* String firstName, String lastName, */ TrainingType trainingType,
-                                                                           User user) {
+    public Trainer createTrainer(String firstName,
+                                 String lastName,
+                                 TrainingType trainingType) {
 
-//        String newUsername = usernamePasswordUtil.generateUsername(firstName, lastName);
-//        String newPassword = usernamePasswordUtil.generatePassword();
-//        User user = new User.Builder()
-//                .firstName(firstName)
-//                .lastName(lastName)
-//                .username(newUsername)
-//                .password(newPassword)
-//                .isActive(true)
-//                .build();
+        String username = usernamePasswordUtil.generateUsername(firstName, lastName);
+        String password = usernamePasswordUtil.generatePassword();
+
+        User user = new User.Builder()
+                .firstName(firstName)
+                .lastName(lastName)
+                .username(username)
+                .password(password)
+                .isActive(true)
+                .build();
 
         Trainer trainer = new Trainer.Builder()
                 .trainingType(trainingType)
                 .user(user)
                 .build();
-
         log.info("Creating trainer: {}", user.getUsername());
         try {
             trainerRepository.save(trainer);
-            log.debug("Trainer saved with ID: {}", trainer.getId());
+            log.info("Trainer {} created successfully with ID: {}", user.getUsername(), trainer.getId());
+            return trainer;
         } catch (Exception e) {
             log.error("Failed to save trainer: {}", e.getMessage(), e);
+            throw new TraineeCreationException("Failed to create trainer", e);
         }
-    }
 
-//    @Transactional
-//    public boolean authenticate(String username, String password) {
-//        return userService.authenticate(username, password);
-//    }
+    }
 
     @Transactional
     public Optional<Trainer> findByUsername(String username) {
