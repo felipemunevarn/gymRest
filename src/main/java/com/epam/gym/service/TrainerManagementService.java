@@ -42,30 +42,30 @@ public class TrainerManagementService {
         return new TrainerRegistrationResponse(user.getUsername(), user.getPassword());
     }
 
-    @Transactional
-    public TrainerProfileResponse getTrainerByUsername(String username) {
-        Optional<Trainer> trainer = trainerService.findByUsername(username);
-        List<Trainee> trainees = trainingService.getTraineesByTrainerUsername(username);
-        List<TraineeDto> traineesDto = trainees.stream().
-                map(trainee -> new TraineeDto(trainee.getUser().getUsername(),
-                        trainee.getUser().getFirstName(),
-                        trainee.getUser().getLastName())).
-                toList();
-        return new TrainerProfileResponse(trainer.get().getUser().getFirstName(),
-                trainer.get().getUser().getLastName(),
-                trainer.get().getTrainingType(),
-                trainer.get().getUser().isActive(),
-                traineesDto);
-    }
+//    @Transactional
+//    public TrainerProfileResponse getTrainerByUsername(String username) {
+//        Optional<Trainer> trainer = trainerService.findByUsername(username);
+//        List<Trainee> trainees = trainingService.getTraineesByTrainerUsername(username);
+//        List<TraineeDto> traineesDto = trainees.stream().
+//                map(trainee -> new TraineeDto(trainee.getUser().getUsername(),
+//                        trainee.getUser().getFirstName(),
+//                        trainee.getUser().getLastName())).
+//                toList();
+//        return new TrainerProfileResponse(trainer.get().getUser().getFirstName(),
+//                trainer.get().getUser().getLastName(),
+//                trainer.get().getTrainingType(),
+//                trainer.get().getUser().isActive(),
+//                traineesDto);
+//    }
 
-    @Transactional
-    public TrainerProfileResponse updateTrainer(TrainerUpdateRequest request) {
-        Optional<TrainingType> optTrainingType = trainingTypeRepository.findByType(TrainingTypeEnum.valueOf(request.specialization()));
-        trainerService.updateTrainer(request.username(), optTrainingType.get());
-        userService.updateUser(request.username(),
-                request.firstName(),
-                request.lastName(),
-                request.isActive());
-        return getTrainerByUsername(request.username());
-    }
+//    @Transactional
+//    public TrainerProfileResponse updateTrainer(TrainerUpdateRequest request) {
+//        Optional<TrainingType> optTrainingType = trainingTypeRepository.findByType(TrainingTypeEnum.valueOf(request.specialization()));
+//        trainerService.updateTrainer(request.username(), optTrainingType.get());
+//        userService.updateUser(request.username(),
+//                request.firstName(),
+//                request.lastName(),
+//                request.isActive());
+//        return getTrainerByUsername(request.username());
+//    }
 }

@@ -91,6 +91,33 @@ public class FacadeService {
                 trainer.getUser().getPassword());
     }
 
+    @Transactional
+    public TrainerProfileResponse getTrainerByUsername(String username) {
+        Trainer trainer = trainerService.findTrainerByUsername(username);
+        List<TraineeDto> traineesDto = trainer.getTrainees().stream().
+                map(trainee -> new TraineeDto(trainee.getUser().getUsername(),
+                        trainee.getUser().getFirstName(),
+                        trainee.getUser().getLastName()
+                )).toList();
+        return new TrainerProfileResponse(trainer.getUser().getFirstName(),
+                trainer.getUser().getLastName(),
+                trainer.getTrainingType(),
+                trainer.getUser().isActive(),
+                traineesDto);
+    }
+
+    @Transactional
+    public TrainerProfileResponse updateTrainer(TrainerUpdateRequest request) {
+        TrainingType trainingType = trainingTypeService.findByType(request.specialization());
+        trainerService.updateTrainer(request.username(),
+                request.firstName(),
+                request.lastName(),
+                trainingType,
+                request.isActive()
+        );
+        return getTrainerByUsername(request.username());
+    }
+
     ////////////////////////////////////////////////
     //////////// TRAINING //////////////////////////
     ////////////////////////////////////////////////

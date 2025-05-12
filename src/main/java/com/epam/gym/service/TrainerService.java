@@ -64,19 +64,24 @@ public class TrainerService {
     }
 
     @Transactional
-    public Optional<Trainer> findByUsername(String username) {
-        return trainerRepository.findByUserUsername(username);
+    public Trainer findTrainerByUsername(String username) {
+        log.debug("Finding trainer by username: {}", username);
+        return trainerRepository.findByUserUsername(username)
+                .orElseThrow(() -> {
+                    log.error("Trainer not found with username: {}", username);
+                    return new NoResultException("Trainee not found");
+                });
     }
 
-    @Transactional
-    public Optional<Trainer> getAuthenticatedTrainer(String username, String password) {
+//    @Transactional
+//    public Optional<Trainer> getAuthenticatedTrainer(String username, String password) {
 //        if (!authenticate(username, password)) {
 //            log.warn("Authentication failed for {}", username);
 //            return Optional.empty();
 //        }
 //        log.info("Authentication successful for {}", username);
-        return findByUsername(username);
-    }
+//        return findByUsername(username);
+//    }
 
 //    @Transactional
 //    public void changeTrainerPassword(String username, String oldPassword, String newPassword) {
@@ -94,16 +99,43 @@ public class TrainerService {
 
     @Transactional
     public void updateTrainer(String username,
-                              @Nullable TrainingType specialization
+                String firstName,
+                String lastName,
+      @Nullable TrainingType specialization,
+                boolean isActive
     ) {
-        Optional<Trainer> optTrainer = Optional.ofNullable(findByUsername(username)
-                .orElseThrow(() -> new NoResultException("Trainee not found with username: " + username)));
+        Trainer trainer = findTrainerByUsername(username);
+        Trainer.Builder trainerBuilder = trainer.toBuilder();
 
-        Trainer.Builder trainer = optTrainer.get().toBuilder();
+            User user = trainer.getUser();
+            boolean updated = false;
 
-        trainerRepository.save(trainer.build());
-        log.info("Trainee with username: {} updated succesfully!", username);
-    }
+            boolean userChanged = !firstName.equals(user.getFirstName()) ||
+                    !lastName.equals(user.getLastName()) ||
+                    (isActive != user.isActive());
+
+            if (userChanged) {
+                User userUpdated = user.toBuilder()
+                        .firstName(firstName)
+                        .lastName(lastName)
+                        .isActive(isActive)
+                        .build();
+                trainerBuilder.user(userUpdated);
+                updated = true;
+            }
+
+            if (specialization != null && !specialization.equals(trainer.getTrainingType().getType().toString())) {
+                trainerBuilder.trainingType(specialization);
+                updated = true;
+            }
+
+            if (updated) {
+                trainerRepository.save(trainerBuilder.build());
+                log.info("Trainer with username '{}' updated successfully!", username);
+            } else {
+                log.info("No updates applied for trainer with username '{}'.", username);
+            }
+        }
 
 //    @Transactional
 //    public void changeActiveStatus(String username, String password, boolean isActive) {

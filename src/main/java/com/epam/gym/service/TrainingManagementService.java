@@ -22,16 +22,16 @@ public class TrainingManagementService {
         this.trainerService = trainerService;
     }
 
-    public void createTraining(String traineeUsername,
-                               String trainerUsername,
-                               String name,
-                               TrainingType trainingType,
-                               LocalDate date,
-                               int duration) {
-        Trainee trainee = traineeService.findTraineeByUsername(traineeUsername);
-        Optional<Trainer> optTrainer = trainerService.findByUsername(trainerUsername);
-        trainingService.createTraining(trainee, optTrainer.get(), name, trainingType, date, duration);
-    }
+//    public void createTraining(String traineeUsername,
+//                               String trainerUsername,
+//                               String name,
+//                               TrainingType trainingType,
+//                               LocalDate date,
+//                               int duration) {
+//        Trainee trainee = traineeService.findTraineeByUsername(traineeUsername);
+//        Optional<Trainer> optTrainer = trainerService.findByUsername(trainerUsername);
+//        trainingService.createTraining(trainee, optTrainer.get(), name, trainingType, date, duration);
+//    }
 
     public List<Training> getTraineeTrainings(String username,
                                               LocalDate from,
