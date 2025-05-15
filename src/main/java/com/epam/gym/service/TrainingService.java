@@ -16,20 +16,11 @@ public class TrainingService {
 
     private static final Logger log = LoggerFactory.getLogger(TrainingService.class);
 
-//    private final TraineeRepository traineeRepository;
-//    private final TrainerRepository trainerRepository;
     private final TrainingRepository trainingRepository;
-//    private final UserService userService;
 
     @Autowired
-    public TrainingService(/* TraineeRepository traineeRepository,
-                           TrainerRepository trainerRepository, */
-                           TrainingRepository trainingRepository /*,
-                           UserService userService */) {
-//        this.traineeRepository = traineeRepository;
-//        this.trainerRepository = trainerRepository;
+    public TrainingService(TrainingRepository trainingRepository) {
         this.trainingRepository = trainingRepository;
-//        this.userService = userService;
     }
 
     @Transactional
@@ -57,11 +48,6 @@ public class TrainingService {
         }
     }
 
-//    @Transactional
-//    public boolean authenticate(String username, String password) {
-//        return userService.authenticate(username, password);
-//    }
-
     @Transactional
     public List<Training> getTraineeTrainings(String username,
                                               LocalDate from,
@@ -80,7 +66,10 @@ public class TrainingService {
                                               LocalDate from,
                                               LocalDate to,
                                               String traineeName) {
-        return trainingRepository.findTrainerTrainingsByCriteria(username, from, to, traineeName);
+        return trainingRepository.findTrainerTrainingsByCriteria(username,
+                from,
+                to,
+                traineeName);
     }
 
     @Transactional
@@ -88,16 +77,6 @@ public class TrainingService {
         for (Training t : trainings) {
             trainingRepository.delete(t);
         }
-    }
-
-    @Transactional
-    public List<Trainer> getTrainersByTraineeUsername(String username) {
-        return trainingRepository.findTrainersByTraineeUsername(username);
-    }
-
-    @Transactional
-    public List<Trainee> getTraineesByTrainerUsername(String username) {
-        return trainingRepository.findTraineesByTrainerUsername(username);
     }
 
 }

@@ -3,7 +3,6 @@ package com.epam.gym.controller;
 import com.epam.gym.dto.*;
 import com.epam.gym.service.FacadeService;
 import com.epam.gym.service.TokenService;
-import com.epam.gym.service.TrainerManagementService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,6 +79,15 @@ public class TrainerController {
     public ResponseEntity<List<TrainerDto>> getAvailableTrainers(@RequestParam String traineeUsername) {
         List<TrainerDto> trainers = facadeService.getAvailableTrainersForTrainee(traineeUsername);
         return ResponseEntity.ok(trainers);
+    }
+
+    @GetMapping("/{username}/trainings")
+    public ResponseEntity<List<TrainerTrainingResponse>> getTrainerTrainings(
+            @PathVariable String username,
+            @Valid TrainerTrainingRequest request
+    ) {
+        List<TrainerTrainingResponse> response = facadeService.findTrainerTrainings(username, request);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
 }

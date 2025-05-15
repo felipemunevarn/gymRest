@@ -68,11 +68,11 @@ public class TraineeController {
     }
 
     @GetMapping("/{username}/trainings")
-    public ResponseEntity<List<TrainingResponse>> getTraineeTrainings(
+    public ResponseEntity<List<TraineeTrainingResponse>> getTraineeTrainings(
             @PathVariable String username,
-            @Valid TrainingRequest request
+            @Valid TraineeTrainingRequest request
     ) {
-        List<TrainingResponse> response = facadeService.findTraineeTrainings(username, request);
+        List<TraineeTrainingResponse> response = facadeService.findTraineeTrainings(username, request);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 }

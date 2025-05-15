@@ -40,23 +40,23 @@ public class TraineeManagementService {
         return new TraineeRegistrationResponse(user.getUsername(), user.getPassword());
     }
 
-    @Transactional
-    public TraineeProfileResponse getTraineeByUsername(String username) {
-        Trainee trainee = traineeService.findTraineeByUsername(username);
-        List<Trainer> trainers = trainingService.getTrainersByTraineeUsername(username);
-        List<TrainerDto> trainersDto = trainers.stream().
-                map(trainer -> new TrainerDto(trainer.getUser().getUsername(),
-                        trainer.getUser().getFirstName(),
-                        trainer.getUser().getLastName(),
-                        trainer.getTrainingType().getType().toString())).
-                toList();
-        return new TraineeProfileResponse(trainee.getUser().getFirstName(),
-                trainee.getUser().getLastName(),
-                trainee.getDateOfBirth(),
-                trainee.getAddress(),
-                trainee.getUser().isActive(),
-                trainersDto);
-    }
+//    @Transactional
+//    public TraineeProfileResponse getTraineeByUsername(String username) {
+//        Trainee trainee = traineeService.findTraineeByUsername(username);
+//        List<Trainer> trainers = trainingService.getTrainersByTraineeUsername(username);
+//        List<TrainerDto> trainersDto = trainers.stream().
+//                map(trainer -> new TrainerDto(trainer.getUser().getUsername(),
+//                        trainer.getUser().getFirstName(),
+//                        trainer.getUser().getLastName(),
+//                        trainer.getTrainingType().getType().toString())).
+//                toList();
+//        return new TraineeProfileResponse(trainee.getUser().getFirstName(),
+//                trainee.getUser().getLastName(),
+//                trainee.getDateOfBirth(),
+//                trainee.getAddress(),
+//                trainee.getUser().isActive(),
+//                trainersDto);
+//    }
 
     @Transactional
     public void deleteTraineeCompletely(String username) {
@@ -69,13 +69,13 @@ public class TraineeManagementService {
         traineeService.deleteTrainee(username);
     }
 
-    @Transactional
-    public TraineeProfileResponse updateTrainee(TraineeUpdateRequest request) {
-//        traineeService.updateTrainee(request.username(), request.dateOfBirth(), request.address());
-        userService.updateUser(request.username(),
-                request.firstName(),
-                request.lastName(),
-                request.isActive());
-        return getTraineeByUsername(request.username());
-    }
+//    @Transactional
+//    public TraineeProfileResponse updateTrainee(TraineeUpdateRequest request) {
+////        traineeService.updateTrainee(request.username(), request.dateOfBirth(), request.address());
+//        userService.updateUser(request.username(),
+//                request.firstName(),
+//                request.lastName(),
+//                request.isActive());
+//        return getTraineeByUsername(request.username());
+//    }
 }

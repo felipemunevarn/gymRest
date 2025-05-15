@@ -146,8 +146,8 @@ public class FacadeService {
     }
 
     @Transactional
-    public List<TrainingResponse> findTraineeTrainings(String username,
-                                                       TrainingRequest request) {
+    public List<TraineeTrainingResponse> findTraineeTrainings(String username,
+                                                              TraineeTrainingRequest request) {
         TrainingType trainingType = null;
         if (request.specialization() != null) {
             trainingType = trainingTypeService.findByType(request.specialization());
@@ -158,11 +158,27 @@ public class FacadeService {
                 request.trainerName(),
                 trainingType);
         return trainings.stream().
-                map(training -> new TrainingResponse(training.getName(),
+                map(training -> new TraineeTrainingResponse(training.getName(),
                         training.getDate().toString(),
                         training.getTrainingType().getType().toString(),
                         training.getDuration(),
                         training.getTrainer().getUser().getUsername()))
+                .toList();
+    }
+
+    @Transactional
+    public List<TrainerTrainingResponse> findTrainerTrainings(String username,
+                                                              TrainerTrainingRequest request) {
+        List<Training> trainings = trainingService.getTrainerTrainings(username,
+                request.from(),
+                request.to(),
+                request.traineeName());
+        return trainings.stream().
+                map(training -> new TrainerTrainingResponse(training.getName(),
+                        training.getDate().toString(),
+                        training.getTrainingType().getType().toString(),
+                        training.getDuration(),
+                        training.getTrainee().getUser().getUsername()))
                 .toList();
     }
 
