@@ -33,13 +33,13 @@ public class TrainingManagementService {
 //        trainingService.createTraining(trainee, optTrainer.get(), name, trainingType, date, duration);
 //    }
 
-    public List<Training> getTraineeTrainings(String username,
-                                              LocalDate from,
-                                              LocalDate to,
-                                              String trainerName,
-                                              TrainingTypeEnum type) {
-        return trainingService.getTraineeTrainings(username, from, to, trainerName, type);
-    }
+//    public List<Training> getTraineeTrainings(String username,
+//                                              LocalDate from,
+//                                              LocalDate to,
+//                                              String trainerName,
+//                                              TrainingTypeEnum type) {
+//        return trainingService.getTraineeTrainings(username, from, to, trainerName, type);
+//    }
 
     public List<Training> getTrainerTrainings(String username,
                                               LocalDate from,

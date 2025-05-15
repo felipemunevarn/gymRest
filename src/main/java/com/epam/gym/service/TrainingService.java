@@ -33,29 +33,12 @@ public class TrainingService {
     }
 
     @Transactional
-    public void createTraining(/* String username,
-                               String password,
-                               String traineeUsername,
-                               String trainerUsername, */
-                               Trainee trainee,
+    public void createTraining(Trainee trainee,
                                Trainer trainer,
                                String name,
                                TrainingType trainingType,
                                LocalDate date,
                                int duration) {
-//        if (!authenticate(username, password)) {
-//            log.warn("Authentication failed for {}", username);
-//            return;
-//        }
-//        log.info("Authentication successful for {}", username);
-
-//        Optional<Trainee> optTrainee = traineeRepository.findByUserUsername(traineeUsername);
-//        Optional<Trainer> optTrainer = trainerRepository.findByUserUsername(trainerUsername);
-
-//        if (optTrainee.isEmpty() || optTrainer.isEmpty()) {
-//            log.error("Trainee or Trainer not found for provided usernames.");
-//            throw new NoResultException("Trainee or Trainer not found");
-//        }
 
         Training training = new Training.Builder()
                 .trainee(trainee)
@@ -84,8 +67,12 @@ public class TrainingService {
                                               LocalDate from,
                                               LocalDate to,
                                               String trainerName,
-                                              TrainingTypeEnum type) {
-        return trainingRepository.findTraineeTrainingsByCriteria(username, from, to, trainerName, type);
+                                              TrainingType type) {
+        return trainingRepository.findTraineeTrainingsByCriteria(username,
+                from,
+                to,
+                trainerName,
+                type);
     }
 
     @Transactional

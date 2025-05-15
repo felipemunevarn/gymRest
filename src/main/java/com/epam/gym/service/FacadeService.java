@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class FacadeService {
@@ -118,9 +117,54 @@ public class FacadeService {
         return getTrainerByUsername(request.username());
     }
 
+    @Transactional
+    public List<TrainerDto> getAvailableTrainersForTrainee(String traineeUsername) {
+        List<Trainer> availableTrainers = trainerService.getAvailableTrainersForTrainee(traineeUsername);
+        return availableTrainers
+                .stream()
+                .map(trainer -> new TrainerDto(trainer.getUser().getUsername(),
+                trainer.getUser().getFirstName(),
+                trainer.getUser().getLastName(),
+                trainer.getTrainingType().getType().toString()))
+                .toList();
+    }
+
     ////////////////////////////////////////////////
     //////////// TRAINING //////////////////////////
     ////////////////////////////////////////////////
+
+    @Transactional
+    public void registerTraining(TrainingRegistrationRequest request) {
+        Trainee trainee = traineeService.findTraineeByUsername(request.traineeUsername());
+        Trainer trainer = trainerService.findTrainerByUsername(request.trainerUsername());
+        trainingService.createTraining(trainee,
+                trainer,
+                request.name(),
+                trainer.getTrainingType(),
+                request.date(),
+                request.duration());
+    }
+
+    @Transactional
+    public List<TrainingResponse> findTraineeTrainings(String username,
+                                                       TrainingRequest request) {
+        TrainingType trainingType = null;
+        if (request.specialization() != null) {
+            trainingType = trainingTypeService.findByType(request.specialization());
+        }
+        List<Training> trainings = trainingService.getTraineeTrainings(username,
+                request.from(),
+                request.to(),
+                request.trainerName(),
+                trainingType);
+        return trainings.stream().
+                map(training -> new TrainingResponse(training.getName(),
+                        training.getDate().toString(),
+                        training.getTrainingType().getType().toString(),
+                        training.getDuration(),
+                        training.getTrainer().getUser().getUsername()))
+                .toList();
+    }
 
     ////////////////////////////////////////////////
     //////////// TRAINING TYPE /////////////////////

@@ -1,9 +1,6 @@
 package com.epam.gym.repository;
 
-import com.epam.gym.entity.Trainee;
-import com.epam.gym.entity.Trainer;
-import com.epam.gym.entity.Training;
-import com.epam.gym.entity.TrainingTypeEnum;
+import com.epam.gym.entity.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,6 +11,7 @@ import java.util.List;
 
 @Repository
 public interface TrainingRepository extends JpaRepository<Training, Long> {
+
     @Query("""
     SELECT t FROM Training t
     WHERE t.trainee.user.username = :username
@@ -22,12 +20,13 @@ public interface TrainingRepository extends JpaRepository<Training, Long> {
     AND (:trainerName IS NULL OR CONCAT(t.trainer.user.firstName, ' ', t.trainer.user.lastName) LIKE %:trainerName%)
     AND (:trainingType IS NULL OR t.trainingType = :trainingType)
 """)
+
     List<Training> findTraineeTrainingsByCriteria(
             @Param("username") String username,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
             @Param("trainerName") String trainerName,
-            @Param("trainingType") TrainingTypeEnum trainingType
+            @Param("trainingType") TrainingType trainingType
     );
 
     @Query("""

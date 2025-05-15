@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping(value = "/api/v1/trainers")
 public class TrainerController {
@@ -72,6 +74,12 @@ public class TrainerController {
     ) {
         TrainerProfileResponse response = facadeService.updateTrainer(request);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+    }
+
+    @GetMapping("/available")
+    public ResponseEntity<List<TrainerDto>> getAvailableTrainers(@RequestParam String traineeUsername) {
+        List<TrainerDto> trainers = facadeService.getAvailableTrainersForTrainee(traineeUsername);
+        return ResponseEntity.ok(trainers);
     }
 
 }

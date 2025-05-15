@@ -1,9 +1,6 @@
 package com.epam.gym.controller;
 
-import com.epam.gym.dto.TraineeProfileResponse;
-import com.epam.gym.dto.TraineeRegistrationRequest;
-import com.epam.gym.dto.TraineeRegistrationResponse;
-import com.epam.gym.dto.TraineeUpdateRequest;
+import com.epam.gym.dto.*;
 import com.epam.gym.service.FacadeService;
 import com.epam.gym.service.TokenService;
 import jakarta.validation.Valid;
@@ -12,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping(value = "/api/v1/trainees")
@@ -66,5 +65,14 @@ public class TraineeController {
     public ResponseEntity<Void> deleteTrainee(@PathVariable String username) {
         facadeService.deleteTrainee(username);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{username}/trainings")
+    public ResponseEntity<List<TrainingResponse>> getTraineeTrainings(
+            @PathVariable String username,
+            @Valid TrainingRequest request
+    ) {
+        List<TrainingResponse> response = facadeService.findTraineeTrainings(username, request);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 }

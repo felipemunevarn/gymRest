@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class TrainerService {
@@ -73,87 +72,49 @@ public class TrainerService {
                 });
     }
 
-//    @Transactional
-//    public Optional<Trainer> getAuthenticatedTrainer(String username, String password) {
-//        if (!authenticate(username, password)) {
-//            log.warn("Authentication failed for {}", username);
-//            return Optional.empty();
-//        }
-//        log.info("Authentication successful for {}", username);
-//        return findByUsername(username);
-//    }
-
-//    @Transactional
-//    public void changeTrainerPassword(String username, String oldPassword, String newPassword) {
-//        Optional<Trainer> optTrainer = findByUsername(username);
-//        if (optTrainer.isEmpty()) {
-//            log.error("User with username: {} is not a trainer", username);
-//            throw new NoResultException("Trainer not found: " + username);
-//        } else if (!authenticate(username, oldPassword)) {
-//            log.warn("Authentication failed for {}", username);
-//            throw new SecurityException("Authentication failed");
-//        } else {
-//            userService.changePassword(username, oldPassword, newPassword);
-//        }
-//    }
-
     @Transactional
     public void updateTrainer(String username,
-                String firstName,
-                String lastName,
-      @Nullable TrainingType specialization,
-                boolean isActive
+                              String firstName,
+                              String lastName,
+                              @Nullable TrainingType specialization,
+                              boolean isActive
     ) {
         Trainer trainer = findTrainerByUsername(username);
         Trainer.Builder trainerBuilder = trainer.toBuilder();
 
-            User user = trainer.getUser();
-            boolean updated = false;
+        User user = trainer.getUser();
+        boolean updated = false;
 
-            boolean userChanged = !firstName.equals(user.getFirstName()) ||
-                    !lastName.equals(user.getLastName()) ||
-                    (isActive != user.isActive());
+        boolean userChanged = !firstName.equals(user.getFirstName()) ||
+                !lastName.equals(user.getLastName()) ||
+                (isActive != user.isActive());
 
-            if (userChanged) {
-                User userUpdated = user.toBuilder()
-                        .firstName(firstName)
-                        .lastName(lastName)
-                        .isActive(isActive)
-                        .build();
-                trainerBuilder.user(userUpdated);
-                updated = true;
-            }
-
-            if (specialization != null && !specialization.equals(trainer.getTrainingType().getType().toString())) {
-                trainerBuilder.trainingType(specialization);
-                updated = true;
-            }
-
-            if (updated) {
-                trainerRepository.save(trainerBuilder.build());
-                log.info("Trainer with username '{}' updated successfully!", username);
-            } else {
-                log.info("No updates applied for trainer with username '{}'.", username);
-            }
+        if (userChanged) {
+            User userUpdated = user.toBuilder()
+                    .firstName(firstName)
+                    .lastName(lastName)
+                    .isActive(isActive)
+                    .build();
+            trainerBuilder.user(userUpdated);
+            updated = true;
         }
 
-//    @Transactional
-//    public void changeActiveStatus(String username, String password, boolean isActive) {
-//        Optional<Trainer> optTrainer = findByUsername(username);
-//        if (optTrainer.isEmpty()) {
-//            log.error("User with username: {} is not a trainer", username);
-//            throw new NoResultException("Trainer not found: " + username);
-//        } else if (!authenticate(username, password)) {
-//            log.warn("Authentication failed for {}", username);
-//            throw new SecurityException("Authentication failed");
-//        }
-//        userService.setActiveStatus(username, isActive);
-//    }
+        if (specialization != null && !specialization.equals(trainer.getTrainingType().getType().toString())) {
+            trainerBuilder.trainingType(specialization);
+            updated = true;
+        }
+
+        if (updated) {
+            trainerRepository.save(trainerBuilder.build());
+            log.info("Trainer with username '{}' updated successfully!", username);
+        } else {
+            log.info("No updates applied for trainer with username '{}'.", username);
+        }
+    }
 
     @Transactional
-    public List<Trainer> getUnassignedTrainersForTrainee(String username) {
-        List<Trainer> trainers = trainerRepository.findTrainersNotAssignedToTrainee(username);
-        return trainers;
+    public List<Trainer> getAvailableTrainersForTrainee(String username) {
+        return trainerRepository.findActiveTrainersNotAssignedToTrainee(username);
     }
 
 }
