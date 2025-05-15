@@ -1,6 +1,7 @@
 package com.epam.gym.service;
 
 import com.epam.gym.entity.Trainee;
+import com.epam.gym.entity.Trainer;
 import com.epam.gym.entity.User;
 import com.epam.gym.exception.TraineeCreationException;
 import com.epam.gym.repository.TraineeRepository;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.List;
 
 @Service
 public class TraineeService {
@@ -126,4 +129,16 @@ public class TraineeService {
         traineeRepository.delete(trainee);
         log.info("Deleted trainee {}", username);
     }
+
+    @Transactional
+    public Trainee updateTraineeTrainers(String traineeUsername, List<Trainer> trainers) {
+        Trainee trainee = findTraineeByUsername(traineeUsername);
+
+        Trainee updatedTrainee = trainee.toBuilder()
+                .trainers(new HashSet<>(trainers)).build();
+        traineeRepository.save(updatedTrainee);
+
+        return trainee;
+    }
+
 }

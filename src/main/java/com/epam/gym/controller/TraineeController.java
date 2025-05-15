@@ -75,4 +75,14 @@ public class TraineeController {
         List<TraineeTrainingResponse> response = facadeService.findTraineeTrainings(username, request);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
+
+    @PutMapping("/{username}/trainers")
+    public ResponseEntity<TraineeTrainerResponse> updateTraineeTrainers(
+            @PathVariable String username,
+            @RequestBody UpdateTraineeTrainersRequest request
+    ){
+        TraineeTrainerResponse response = facadeService.updateTraineeTrainers(username, request);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
 }

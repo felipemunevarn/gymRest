@@ -76,6 +76,24 @@ public class FacadeService {
         traineeService.deleteTrainee(username);
     }
 
+    @Transactional
+    public TraineeTrainerResponse updateTraineeTrainers(String username,
+                                                        UpdateTraineeTrainersRequest request){
+//        List<Trainer> trainers = request.trainerUsernames().stream().
+//                map(trainerService::findTrainerByUsername).toList();
+        List<Trainer> trainers = trainerService.getTrainersByUsernames(request.trainerUsernames());
+
+        traineeService.updateTraineeTrainers(username, trainers);
+
+        List<TrainerDto> trainersDto = trainers.stream().
+                map(trainer -> new TrainerDto(trainer.getUser().getUsername(),
+                        trainer.getUser().getFirstName(),
+                        trainer.getUser().getLastName(),
+                        trainer.getTrainingType().getType().toString()
+                        )).toList();
+        return new TraineeTrainerResponse(trainersDto);
+    }
+
     ////////////////////////////////////////////////
     //////////// TRAINER ///////////////////////////
     ////////////////////////////////////////////////

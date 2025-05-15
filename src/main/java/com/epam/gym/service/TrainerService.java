@@ -117,4 +117,9 @@ public class TrainerService {
         return trainerRepository.findActiveTrainersNotAssignedToTrainee(username);
     }
 
+    @Transactional
+    public List<Trainer> getTrainersByUsernames(List<String> usernames) {
+        return trainerRepository.findAllByUserUsernameIn(usernames);
+    }
+
 }

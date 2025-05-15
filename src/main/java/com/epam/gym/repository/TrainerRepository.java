@@ -30,4 +30,6 @@ public interface TrainerRepository extends JpaRepository<Trainer, Long> {
       )
     """)
     List<Trainer> findActiveTrainersNotAssignedToTrainee(@Param("username") String username);
+
+    List<Trainer> findAllByUserUsernameIn(List<String> usernames);
 }
