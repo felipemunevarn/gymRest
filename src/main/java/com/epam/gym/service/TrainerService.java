@@ -1,5 +1,6 @@
 package com.epam.gym.service;
 
+import com.epam.gym.entity.Trainee;
 import com.epam.gym.entity.Trainer;
 import com.epam.gym.entity.TrainingType;
 import com.epam.gym.entity.User;
@@ -120,6 +121,24 @@ public class TrainerService {
     @Transactional
     public List<Trainer> getTrainersByUsernames(List<String> usernames) {
         return trainerRepository.findAllByUserUsernameIn(usernames);
+    }
+
+    @Transactional
+    public void changeActiveStatus(String username, boolean isActive){
+        Trainer trainer = findTrainerByUsername(username);
+
+        if (trainer.getUser().isActive() != isActive) {
+            User updatedUser = trainer.getUser().toBuilder().
+                    isActive(isActive).
+                    build();
+            Trainer updatedTrainer = trainer.toBuilder().
+                    user(updatedUser).
+                    build();
+            trainerRepository.save(updatedTrainer);
+            log.info("Active status successfully updated for trainer with username '{}'.", username);
+        } else {
+            log.info("No update performed. Trainer '{}' is already in state isActive={}", username, isActive);
+        }
     }
 
 }

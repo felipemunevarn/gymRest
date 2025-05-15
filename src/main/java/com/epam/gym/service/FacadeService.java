@@ -94,6 +94,11 @@ public class FacadeService {
         return new TraineeTrainerResponse(trainersDto);
     }
 
+    @Transactional
+    public void changeTraineeActiveStatus(String username, boolean isActive) {
+        traineeService.changeActiveStatus(username, isActive);
+    }
+
     ////////////////////////////////////////////////
     //////////// TRAINER ///////////////////////////
     ////////////////////////////////////////////////
@@ -145,6 +150,11 @@ public class FacadeService {
                 trainer.getUser().getLastName(),
                 trainer.getTrainingType().getType().toString()))
                 .toList();
+    }
+
+    @Transactional
+    public void changeTrainerActiveStatus(String username, boolean isActive) {
+        trainerService.changeActiveStatus(username, isActive);
     }
 
     ////////////////////////////////////////////////

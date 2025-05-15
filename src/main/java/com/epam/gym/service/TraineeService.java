@@ -138,7 +138,25 @@ public class TraineeService {
                 .trainers(new HashSet<>(trainers)).build();
         traineeRepository.save(updatedTrainee);
 
+        log.info("Updated trainers for trainee with username '{}'.", traineeUsername);
         return trainee;
     }
 
+    @Transactional
+    public void changeActiveStatus(String username, boolean isActive){
+        Trainee trainee = findTraineeByUsername(username);
+
+        if (trainee.getUser().isActive() != isActive) {
+            User updatedUser = trainee.getUser().toBuilder().
+                    isActive(isActive).
+                    build();
+            Trainee updatedTrainee = trainee.toBuilder().
+                    user(updatedUser).
+                    build();
+            traineeRepository.save(updatedTrainee);
+            log.info("Active status successfully updated for trainee with username '{}'.", username);
+        } else {
+            log.info("No update performed. Trainee '{}' is already in state isActive={}", username, isActive);
+        }
+    }
 }

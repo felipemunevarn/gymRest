@@ -90,4 +90,11 @@ public class TrainerController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @PatchMapping("/activation")
+    public ResponseEntity<Void> updateTrainerActivation(
+            @RequestBody @Valid ActivateUserRequest request) {
+        facadeService.changeTrainerActiveStatus(request.username(), request.isActive());
+        return ResponseEntity.ok().build();
+    }
+
 }

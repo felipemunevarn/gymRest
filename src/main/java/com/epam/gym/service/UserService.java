@@ -101,18 +101,23 @@ public class UserService {
     }
 
     @Transactional
-    public void setActiveStatus(String username, boolean isActive) {
+    public boolean changeActiveStatus(String username, boolean isActive) {
         log.info("Setting active status for user {} to {}", username, isActive);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> {
                     log.error("Failed to set active status: User {} not found.", username);
                     return new NoResultException("User not found: " + username);
                 });
-        User updated = user.toBuilder()
-                        .isActive(isActive)
-                                .build();
-        userRepository.save(updated);
-        log.info("Active status updated successfully for user: {}", username);
+        if (user.isActive() != isActive) {
+            User updated = user.toBuilder()
+                    .isActive(isActive)
+                    .build();
+            userRepository.save(updated);
+            log.info("Active status updated successfully for user: {}", username);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Transactional

@@ -85,4 +85,11 @@ public class TraineeController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @PatchMapping("/activation")
+    public ResponseEntity<Void> updateTraineeActivation(
+            @RequestBody @Valid ActivateUserRequest request) {
+        facadeService.changeTraineeActiveStatus(request.username(), request.isActive());
+        return ResponseEntity.ok().build();
+    }
+
 }
