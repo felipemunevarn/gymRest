@@ -79,8 +79,6 @@ public class FacadeService {
     @Transactional
     public TraineeTrainerResponse updateTraineeTrainers(String username,
                                                         UpdateTraineeTrainersRequest request){
-//        List<Trainer> trainers = request.trainerUsernames().stream().
-//                map(trainerService::findTrainerByUsername).toList();
         List<Trainer> trainers = trainerService.getTrainersByUsernames(request.trainerUsernames());
 
         traineeService.updateTraineeTrainers(username, trainers);

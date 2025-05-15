@@ -16,15 +16,12 @@ import java.util.List;
 @RequestMapping(value = "/api/v1/trainers")
 public class TrainerController {
 
-//    private TrainerManagementService trainerManagementService;
     private final FacadeService facadeService;
     private final TokenService tokenService;
 
     @Autowired
-    public TrainerController(/*TrainerManagementService trainerManagementService,*/
-                             FacadeService facadeService,
+    public TrainerController(FacadeService facadeService,
                              TokenService tokenService) {
-//        this.trainerManagementService = trainerManagementService;
         this.facadeService = facadeService;
         this.tokenService = tokenService;
     }
@@ -33,18 +30,9 @@ public class TrainerController {
     public ResponseEntity<TrainerRegistrationResponse> registerTrainer(
             @Valid @RequestBody TrainerRegistrationRequest request
             ) {
-//        TrainerRegistrationResponse response = trainerManagementService.registerTrainer(request);
         TrainerRegistrationResponse response = facadeService.registerTrainer(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-
-//    @GetMapping("/{username}")
-//    public ResponseEntity<TrainerProfileResponse> getProfile(
-//            @PathVariable @NotBlank String username
-//    ) {
-//        TrainerProfileResponse response = trainerManagementService.getTrainerByUsername(username);
-//        return ResponseEntity.status(HttpStatus.OK).body(response);
-//    }
 
     @GetMapping("/{username}")
     public ResponseEntity<TrainerProfileResponse> getTrainer(
@@ -58,25 +46,17 @@ public class TrainerController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-//
-//    @PutMapping
-//    public ResponseEntity<TrainerProfileResponse> updateProfile (
-//            @RequestBody TrainerUpdateRequest request
-//    ) {
-//        TrainerProfileResponse response = trainerManagementService.updateTrainer(request);
-//        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
-//    }
-
     @PutMapping("/")
     public ResponseEntity<TrainerProfileResponse> updateTrainer(
-            @RequestBody TrainerUpdateRequest request
+            @Valid @RequestBody TrainerUpdateRequest request
     ) {
         TrainerProfileResponse response = facadeService.updateTrainer(request);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }
 
     @GetMapping("/available")
-    public ResponseEntity<List<TrainerDto>> getAvailableTrainers(@RequestParam String traineeUsername) {
+    public ResponseEntity<List<TrainerDto>> getAvailableTrainers(
+            @RequestParam String traineeUsername) {
         List<TrainerDto> trainers = facadeService.getAvailableTrainersForTrainee(traineeUsername);
         return ResponseEntity.ok(trainers);
     }
@@ -84,15 +64,16 @@ public class TrainerController {
     @GetMapping("/{username}/trainings")
     public ResponseEntity<List<TrainerTrainingResponse>> getTrainerTrainings(
             @PathVariable String username,
-            @Valid TrainerTrainingRequest request
+            @Valid @RequestBody TrainerTrainingRequest request
     ) {
-        List<TrainerTrainingResponse> response = facadeService.findTrainerTrainings(username, request);
+        List<TrainerTrainingResponse> response = facadeService.findTrainerTrainings(username,
+                request);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @PatchMapping("/activation")
     public ResponseEntity<Void> updateTrainerActivation(
-            @RequestBody @Valid ActivateUserRequest request) {
+            @Valid @RequestBody ActivateUserRequest request) {
         facadeService.changeTrainerActiveStatus(request.username(), request.isActive());
         return ResponseEntity.ok().build();
     }

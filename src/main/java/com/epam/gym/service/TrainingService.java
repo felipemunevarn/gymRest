@@ -72,11 +72,4 @@ public class TrainingService {
                 traineeName);
     }
 
-    @Transactional
-    public void deleteTrainings(List<Training> trainings) {
-        for (Training t : trainings) {
-            trainingRepository.delete(t);
-        }
-    }
-
 }

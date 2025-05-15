@@ -20,17 +20,11 @@ public class TraineeController {
     private final TokenService tokenService;
 
     @Autowired
-    public TraineeController(/*TraineeManagementService traineeManagementService,*/
-                             FacadeService facadeService,
+    public TraineeController(FacadeService facadeService,
                              TokenService tokenService
     ) {
         this.facadeService = facadeService;
         this.tokenService = tokenService;
-    }
-
-    @GetMapping(value = "/greeting")
-    public String greeting() {
-        return "Hello, World!";
     }
 
     @PostMapping("/")
@@ -55,7 +49,7 @@ public class TraineeController {
 
     @PutMapping("/")
     public ResponseEntity<TraineeProfileResponse> updateTrainee(
-            @RequestBody TraineeUpdateRequest request
+            @Valid @RequestBody TraineeUpdateRequest request
             ) {
         TraineeProfileResponse response = facadeService.updateTrainee(request);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
@@ -70,7 +64,7 @@ public class TraineeController {
     @GetMapping("/{username}/trainings")
     public ResponseEntity<List<TraineeTrainingResponse>> getTraineeTrainings(
             @PathVariable String username,
-            @Valid TraineeTrainingRequest request
+            @Valid @RequestBody TraineeTrainingRequest request
     ) {
         List<TraineeTrainingResponse> response = facadeService.findTraineeTrainings(username, request);
         return ResponseEntity.status(HttpStatus.OK).body(response);
@@ -79,7 +73,7 @@ public class TraineeController {
     @PutMapping("/{username}/trainers")
     public ResponseEntity<TraineeTrainerResponse> updateTraineeTrainers(
             @PathVariable String username,
-            @RequestBody UpdateTraineeTrainersRequest request
+            @Valid @RequestBody UpdateTraineeTrainersRequest request
     ){
         TraineeTrainerResponse response = facadeService.updateTraineeTrainers(username, request);
         return ResponseEntity.status(HttpStatus.OK).body(response);
@@ -87,7 +81,7 @@ public class TraineeController {
 
     @PatchMapping("/activation")
     public ResponseEntity<Void> updateTraineeActivation(
-            @RequestBody @Valid ActivateUserRequest request) {
+            @Valid @RequestBody ActivateUserRequest request) {
         facadeService.changeTraineeActiveStatus(request.username(), request.isActive());
         return ResponseEntity.ok().build();
     }

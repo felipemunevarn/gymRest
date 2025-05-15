@@ -1,6 +1,5 @@
 package com.epam.gym.service;
 
-import com.epam.gym.entity.Trainee;
 import com.epam.gym.entity.Trainer;
 import com.epam.gym.entity.TrainingType;
 import com.epam.gym.entity.User;
@@ -100,7 +99,8 @@ public class TrainerService {
             updated = true;
         }
 
-        if (specialization != null && !specialization.equals(trainer.getTrainingType().getType().toString())) {
+        if (specialization != null &&
+                !specialization.equals(trainer.getTrainingType().getType().toString())) {
             trainerBuilder.trainingType(specialization);
             updated = true;
         }

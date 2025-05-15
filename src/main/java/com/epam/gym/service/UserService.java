@@ -26,28 +26,6 @@ public class UserService {
     }
 
     @Transactional
-    public User createUser(String firstName, String lastName) {
-        String newUsername = usernamePasswordUtil.generateUsername(firstName, lastName);
-        String newPassword = usernamePasswordUtil.generatePassword();
-        User user = User.builder()
-                        .firstName(firstName)
-                        .lastName(lastName)
-                        .username(newUsername)
-                        .password(newPassword)
-                        .isActive(true)
-                        .build();
-
-        log.info("Creating user: {}", newUsername);
-        try {
-            userRepository.save(user);
-            log.debug("User saved with ID: {}", user.getId());
-        } catch (Exception e) {
-            log.error("Failed to save user: {}", e.getMessage(), e);
-        }
-        return user;
-    }
-
-    @Transactional
     public Optional<User> findByUsername(String username) {
         log.debug("Finding user by username: {}", username);
         return userRepository.findByUsername(username);
@@ -100,38 +78,4 @@ public class UserService {
         log.info("Password changed successfully for user: {}", username);
     }
 
-    @Transactional
-    public boolean changeActiveStatus(String username, boolean isActive) {
-        log.info("Setting active status for user {} to {}", username, isActive);
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> {
-                    log.error("Failed to set active status: User {} not found.", username);
-                    return new NoResultException("User not found: " + username);
-                });
-        if (user.isActive() != isActive) {
-            User updated = user.toBuilder()
-                    .isActive(isActive)
-                    .build();
-            userRepository.save(updated);
-            log.info("Active status updated successfully for user: {}", username);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    @Transactional
-    public void updateUser(String username,
-                           String firstName,
-                           String lastName,
-                           boolean isActive) {
-        Optional<User> user = userRepository.findByUsername(username);
-        User updated = user.get().toBuilder()
-                        .firstName(firstName)
-                        .lastName(lastName)
-                        .isActive(isActive)
-                        .build();
-        userRepository.save(updated);
-        log.info("FirstName and LastName updated successfully for user: {}", username);
-    }
 }
