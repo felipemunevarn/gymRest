@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
+
 
 @Service
 public class FacadeService {
@@ -45,12 +47,18 @@ public class FacadeService {
     @Transactional
     public TraineeProfileResponse getTraineeByUsername(String username) {
         Trainee trainee = traineeService.findTraineeByUsername(username);
-        List<TrainerDto> trainersDto = trainee.getTrainers().stream().
-                map(trainer -> new TrainerDto(trainer.getUser().getUsername(),
+        List<TrainerDto> trainersDto = trainee.getTrainers().stream()
+                .map(trainer -> new TrainerDto(trainer.getUser().getUsername(),
                         trainer.getUser().getFirstName(),
                         trainer.getUser().getLastName(),
-                        trainer.getTrainingType().getType().toString())).
-                toList();
+                        trainer.getTrainingType().getType().toString()))
+//                toList();
+                .collect(Collectors.toList());
+//        List<TrainerDto> trainersDto = trainee.getTrainers().stream()
+//                .map(trainer -> new TrainerDto(trainer.getUser().getUsername(),
+//                        trainer.getUser().getFirstName(),
+//                        trainer.getUser().getLastName(),
+//                        trainer.getTrainingType().getType().toString()))
         return new TraineeProfileResponse(trainee.getUser().getFirstName(),
                 trainee.getUser().getLastName(),
                 trainee.getDateOfBirth(),
@@ -114,11 +122,11 @@ public class FacadeService {
     @Transactional
     public TrainerProfileResponse getTrainerByUsername(String username) {
         Trainer trainer = trainerService.findTrainerByUsername(username);
-        List<TraineeDto> traineesDto = trainer.getTrainees().stream().
-                map(trainee -> new TraineeDto(trainee.getUser().getUsername(),
+        List<TraineeDto> traineesDto = trainer.getTrainees().stream()
+                .map(trainee -> new TraineeDto(trainee.getUser().getUsername(),
                         trainee.getUser().getFirstName(),
-                        trainee.getUser().getLastName()
-                )).toList();
+                        trainee.getUser().getLastName()))
+                .collect(Collectors.toList());
         return new TrainerProfileResponse(trainer.getUser().getFirstName(),
                 trainer.getUser().getLastName(),
                 trainer.getTrainingType(),

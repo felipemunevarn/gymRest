@@ -136,10 +136,11 @@ public class TraineeService {
 
         Trainee updatedTrainee = trainee.toBuilder()
                 .trainers(new HashSet<>(trainers)).build();
-        traineeRepository.save(updatedTrainee);
+
+        Trainee savedTrainee = traineeRepository.save(updatedTrainee);
 
         log.info("Updated trainers for trainee with username '{}'.", traineeUsername);
-        return trainee;
+        return savedTrainee;
     }
 
     @Transactional

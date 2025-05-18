@@ -1,6 +1,7 @@
 package com.epam.gym.service;
 
 import com.epam.gym.entity.Trainee;
+import com.epam.gym.entity.Trainer;
 import com.epam.gym.entity.User;
 import com.epam.gym.exception.TraineeCreationException;
 import com.epam.gym.repository.TraineeRepository;
@@ -12,7 +13,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.*;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -25,6 +29,7 @@ class TraineeServiceTest {
     @Mock
     private UsernamePasswordUtil usernamePasswordUtil;
 
+    @Spy
     @InjectMocks
     private TraineeService traineeService;
 
@@ -84,7 +89,7 @@ class TraineeServiceTest {
         );
 
         assertEquals("Failed to create trainee", exception.getMessage());
-        assertTrue(exception.getCause() instanceof RuntimeException);
+        assertInstanceOf(RuntimeException.class, exception.getCause());
     }
 
 
@@ -278,7 +283,6 @@ class TraineeServiceTest {
         verify(traineeRepository).save(any(Trainee.class));
     }
 
-
     @Test
     void deleteTrainee_shouldDeleteTrainee() {
         String username = "johndoe";
@@ -288,6 +292,73 @@ class TraineeServiceTest {
         traineeService.deleteTrainee(username);
 
         verify(traineeRepository).delete(trainee);
+    }
+
+    @Test
+    void testUpdateTraineeTrainers_shouldUpdateAndReturnUpdatedTrainee() {
+
+        String username = "carol.trainee";
+        User user = User.builder().username(username).build();
+        Trainee originalTrainee = Trainee.builder().user(user).trainers(Set.of()).build();
+
+        User trainerUser1 = User.builder().username("mary.trainer").build();
+        User trainerUser2 = User.builder().username("john.trainer").build();
+        Trainer trainer1 = Trainer.builder().user(trainerUser1).build();
+        Trainer trainer2 = Trainer.builder().user(trainerUser2).build();
+        List<Trainer> newTrainers = List.of(trainer1, trainer2);
+
+        when(traineeRepository.findByUserUsername(username)).thenReturn(Optional.of(originalTrainee));
+        when(traineeRepository.save(any(Trainee.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Trainee result = traineeService.updateTraineeTrainers(username, newTrainers);
+
+        assertEquals(username, result.getUser().getUsername());
+        assertEquals(2, result.getTrainers().size());
+        assertTrue(result.getTrainers().stream()
+                .anyMatch(t -> t.getUser().getUsername().equals("mary.trainer")));
+        assertTrue(result.getTrainers().stream()
+                .anyMatch(t -> t.getUser().getUsername().equals("john.trainer")));
+
+        ArgumentCaptor<Trainee> captor = ArgumentCaptor.forClass(Trainee.class);
+        verify(traineeRepository).save(captor.capture());
+
+        Trainee savedTrainee = captor.getValue();
+        assertEquals(new HashSet<>(newTrainers), savedTrainee.getTrainers());
+    }
+
+    @Test
+    void testChangeActiveStatus_shouldUpdateStatusWhenDifferent() {
+        String username = "trainee.username";
+        boolean newStatus = false;
+
+        User user = User.builder().username(username).isActive(true).build();
+        Trainee trainee = Trainee.builder().user(user).build();
+
+        when(traineeRepository.findByUserUsername(user.getUsername())).thenReturn(Optional.of(trainee));
+        when(traineeRepository.save(any(Trainee.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        traineeService.changeActiveStatus(username, newStatus);
+
+        ArgumentCaptor<Trainee> captor = ArgumentCaptor.forClass(Trainee.class);
+        verify(traineeRepository).save(captor.capture());
+
+        Trainee saved = captor.getValue();
+        assertFalse(saved.getUser().isActive());
+        assertEquals(username, saved.getUser().getUsername());
+    }
+
+    @Test
+    void testChangeActiveStatus_shouldNotUpdateIfStatusIsSame() {
+        String username = "john";
+        User user = User.builder().username(username).isActive(true).build();
+        Trainee trainee = Trainee.builder().user(user).build();
+
+        Mockito.doReturn(trainee).when(traineeService).findTraineeByUsername(username);
+
+        traineeService.changeActiveStatus(username, true);
+
+        verify(traineeRepository, never()).save(any());
     }
 
     @AfterEach

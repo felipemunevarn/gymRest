@@ -50,26 +50,19 @@ public class TrainerService {
                 .trainingType(trainingType)
                 .user(user)
                 .build();
-        log.info("Creating trainer: {}", user.getUsername());
+
         try {
             trainerRepository.save(trainer);
-            log.info("Trainer {} created successfully with ID: {}", user.getUsername(), trainer.getId());
             return trainer;
         } catch (Exception e) {
-            log.error("Failed to save trainer: {}", e.getMessage(), e);
             throw new TraineeCreationException("Failed to create trainer", e);
         }
-
     }
 
     @Transactional
     public Trainer findTrainerByUsername(String username) {
-        log.debug("Finding trainer by username: {}", username);
         return trainerRepository.findByUserUsername(username)
-                .orElseThrow(() -> {
-                    log.error("Trainer not found with username: {}", username);
-                    return new NoResultException("Trainee not found");
-                });
+                .orElseThrow(() -> new NoResultException("Trainee not found"));
     }
 
     @Transactional
@@ -77,19 +70,16 @@ public class TrainerService {
                               String firstName,
                               String lastName,
                               @Nullable TrainingType specialization,
-                              boolean isActive
-    ) {
+                              boolean isActive) {
         Trainer trainer = findTrainerByUsername(username);
         Trainer.Builder trainerBuilder = trainer.toBuilder();
 
         User user = trainer.getUser();
         boolean updated = false;
 
-        boolean userChanged = !firstName.equals(user.getFirstName()) ||
+        if (!firstName.equals(user.getFirstName()) ||
                 !lastName.equals(user.getLastName()) ||
-                (isActive != user.isActive());
-
-        if (userChanged) {
+                isActive != user.isActive()) {
             User userUpdated = user.toBuilder()
                     .firstName(firstName)
                     .lastName(lastName)
@@ -100,16 +90,13 @@ public class TrainerService {
         }
 
         if (specialization != null &&
-                !specialization.equals(trainer.getTrainingType().getType().toString())) {
+                !specialization.equals(trainer.getTrainingType())) {
             trainerBuilder.trainingType(specialization);
             updated = true;
         }
 
         if (updated) {
             trainerRepository.save(trainerBuilder.build());
-            log.info("Trainer with username '{}' updated successfully!", username);
-        } else {
-            log.info("No updates applied for trainer with username '{}'.", username);
         }
     }
 
@@ -124,21 +111,17 @@ public class TrainerService {
     }
 
     @Transactional
-    public void changeActiveStatus(String username, boolean isActive){
+    public void changeActiveStatus(String username, boolean isActive) {
         Trainer trainer = findTrainerByUsername(username);
 
         if (trainer.getUser().isActive() != isActive) {
-            User updatedUser = trainer.getUser().toBuilder().
-                    isActive(isActive).
-                    build();
-            Trainer updatedTrainer = trainer.toBuilder().
-                    user(updatedUser).
-                    build();
+            User updatedUser = trainer.getUser().toBuilder()
+                    .isActive(isActive)
+                    .build();
+            Trainer updatedTrainer = trainer.toBuilder()
+                    .user(updatedUser)
+                    .build();
             trainerRepository.save(updatedTrainer);
-            log.info("Active status successfully updated for trainer with username '{}'.", username);
-        } else {
-            log.info("No update performed. Trainer '{}' is already in state isActive={}", username, isActive);
         }
     }
-
 }
