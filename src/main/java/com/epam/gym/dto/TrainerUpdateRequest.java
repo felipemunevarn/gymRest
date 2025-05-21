@@ -1,11 +1,7 @@
 package com.epam.gym.dto;
 
-import com.epam.gym.entity.TrainingType;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Past;
-
-import java.time.LocalDate;
+import jakarta.validation.constraints.NotNull;
 
 public record TrainerUpdateRequest(
 
@@ -20,6 +16,6 @@ public record TrainerUpdateRequest(
 
         String specialization,
 
-        @NotBlank(message = "isActive is required")
+        @NotNull(message = "isActive is required")
         boolean isActive
 ) {}

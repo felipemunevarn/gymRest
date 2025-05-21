@@ -2,6 +2,7 @@ package com.epam.gym.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
 
 import java.time.LocalDate;
@@ -23,6 +24,6 @@ public record TraineeUpdateRequest(
 
         String address,
 
-        @NotBlank(message = "isActive is required")
+        @NotNull(message = "isActive is required")
         boolean isActive
 ) {}
