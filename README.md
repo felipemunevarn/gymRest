@@ -29,6 +29,6 @@ This is a **Spring Boot** application for managing a gym using **Object Relation
 ### Clone the Project
 
 ```bash
-git clone https://github.com/your-username/gym-management-system.git
-cd gym-management-system
+git clone https://github.com/felipemunevarn/gymRest
+cd gymRest
 ```
