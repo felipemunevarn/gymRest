@@ -81,13 +81,13 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Validates the provided token and returns its status and associated username if valid.
-     *
-     * @param token The authentication token to validate.
-     * @return ResponseEntity with TokenValidationResponse and HTTP status OK if valid,
-     * or HTTP status UNAUTHORIZED if invalid.
-     */
+//    /**
+//     * Validates the provided token and returns its status and associated username if valid.
+//     *
+//     * @param token The authentication token to validate.
+//     * @return ResponseEntity with TokenValidationResponse and HTTP status OK if valid,
+//     * or HTTP status UNAUTHORIZED if invalid.
+//     */
 //    @GetMapping("/validate")
 //    public ResponseEntity<TokenValidationResponse> validateToken(@RequestHeader("X-Auth-Token") String token) {
 //        if (tokenService.isValidToken(token)) {
