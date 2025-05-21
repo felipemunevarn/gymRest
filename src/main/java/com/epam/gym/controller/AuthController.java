@@ -36,16 +36,15 @@ public class AuthController {
      */
     @PostMapping("/login")
     public ResponseEntity<String> login(
-            @Valid @RequestBody LoginRequest request // Added @Valid for input validation
+            @Valid @RequestBody LoginRequest request
     ) {
         boolean isAuthenticated = authService.authenticate(request.username(),
                 request.password());
         if (isAuthenticated) {
-            // Assuming generateToken returns the token string
+
             String token = tokenService.generateToken(request.username());
             return ResponseEntity.ok(token);
         } else {
-            // Return UNAUTHORIZED status for failed authentication
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
@@ -60,14 +59,13 @@ public class AuthController {
      */
     @PutMapping("/change-password")
     public ResponseEntity<Void> changePassword(
-            @RequestBody @Valid ChangePasswordRequest request // @Valid for input validation
+            @RequestBody @Valid ChangePasswordRequest request
     ) {
-        // Delegate password change logic to AuthService
+
         authService.changePassword(request.username(),
                 request.oldPassword(),
                 request.newPassword());
-        // Return NO_CONTENT status for a successful update with no response body
-        return ResponseEntity.noContent().build(); // Changed status to NO_CONTENT
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -79,10 +77,8 @@ public class AuthController {
      */
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@RequestHeader("X-Auth-Token") String token) {
-        // Invalidate the token using TokenService
         tokenService.invalidateToken(token);
-        // Return NO_CONTENT status for successful logout
-        return ResponseEntity.noContent().build(); // Changed to return ResponseEntity
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -92,20 +88,20 @@ public class AuthController {
      * @return ResponseEntity with TokenValidationResponse and HTTP status OK if valid,
      * or HTTP status UNAUTHORIZED if invalid.
      */
-    @GetMapping("/validate")
-    public ResponseEntity<TokenValidationResponse> validateToken(@RequestHeader("X-Auth-Token") String token) {
-        if (tokenService.isValidToken(token)) {
-            // Assuming getUsername is available in TokenService to retrieve the username from the token
-            String username = tokenService.getUsername(token);
-            // Create a success response DTO
-            TokenValidationResponse response = new TokenValidationResponse(true, username);
-            // Return OK status with the structured response
-            return ResponseEntity.ok(response);
-        } else {
-            // Create a failure response DTO
-            TokenValidationResponse response = new TokenValidationResponse(false, null);
-            // Return UNAUTHORIZED status for invalid token
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response); // Return UNAUTHORIZED for invalid
-        }
-    }
+//    @GetMapping("/validate")
+//    public ResponseEntity<TokenValidationResponse> validateToken(@RequestHeader("X-Auth-Token") String token) {
+//        if (tokenService.isValidToken(token)) {
+//            // Assuming getUsername is available in TokenService to retrieve the username from the token
+//            String username = tokenService.getUsername(token);
+//            // Create a success response DTO
+//            TokenValidationResponse response = new TokenValidationResponse(true, username);
+//            // Return OK status with the structured response
+//            return ResponseEntity.ok(response);
+//        } else {
+//            // Create a failure response DTO
+//            TokenValidationResponse response = new TokenValidationResponse(false, null);
+//            // Return UNAUTHORIZED status for invalid token
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response); // Return UNAUTHORIZED for invalid
+//        }
+//    }
 }

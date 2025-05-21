@@ -1,9 +1,11 @@
 package com.epam.gym.controller;
 
 import com.epam.gym.dto.*;
+import com.epam.gym.entity.Trainee;
 import com.epam.gym.exception.InvalidTokenException;
 import com.epam.gym.service.FacadeService;
 import com.epam.gym.service.TokenService;
+import com.epam.gym.service.TraineeService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/api/v1/trainees")
@@ -21,13 +24,17 @@ public class TraineeController {
 
     private final FacadeService facadeService;
     private final TokenService tokenService;
+    private final TraineeService traineeService;
 
     @Autowired
-    public TraineeController(FacadeService facadeService,
-                             TokenService tokenService
+    public TraineeController(
+            FacadeService facadeService,
+            TokenService tokenService,
+            TraineeService traineeService
     ) {
         this.facadeService = facadeService;
         this.tokenService = tokenService;
+        this.traineeService = traineeService;
     }
 
     /**
@@ -40,7 +47,13 @@ public class TraineeController {
     public ResponseEntity<TraineeRegistrationResponse> registerTrainee(
             @Valid @RequestBody TraineeRegistrationRequest request
     ) {
-        TraineeRegistrationResponse response = facadeService.registerTrainee(request);
+//        TraineeRegistrationResponse response = facadeService.registerTrainee(request);
+        Trainee trainee = traineeService.createTrainee(request.firstName(),
+                request.lastName(),
+                request.dateOfBirth(),
+                request.address());
+        TraineeRegistrationResponse response = new TraineeRegistrationResponse(trainee.getUser().getUsername(),
+                trainee.getUser().getPassword());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -57,7 +70,7 @@ public class TraineeController {
             @PathVariable @NotBlank String username,
             @RequestHeader("X-Auth-Token") String token
     ) {
-        if (!tokenService.isValidToken(token)){
+        if (!tokenService.isValidToken(username, token)){
             throw new InvalidTokenException("Token not authenticated");
         }
         TraineeProfileResponse response = facadeService.getTraineeByUsername(username);
@@ -77,10 +90,31 @@ public class TraineeController {
             @Valid @RequestBody TraineeUpdateRequest request,
             @RequestHeader("X-Auth-Token") String token
     ) {
-        if (!tokenService.isValidToken(token)){
+        if (!tokenService.isValidToken(request.username(), token)){
             throw new InvalidTokenException("Token not authenticated");
         }
-        TraineeProfileResponse response = facadeService.updateTrainee(request);
+        traineeService.updateTrainee(request.username(),
+                request.firstName(),
+                request.lastName(),
+                request.dateOfBirth(),
+                request.address(),
+                request.isActive()
+        );
+        Trainee trainee = traineeService.findTraineeByUsername(request.username());
+
+        List<TrainerDto> trainersDto = trainee.getTrainers().stream()
+                .map(trainer -> new TrainerDto(trainer.getUser().getUsername(),
+                        trainer.getUser().getFirstName(),
+                        trainer.getUser().getLastName(),
+                        trainer.getTrainingType().getType().toString()))
+                .collect(Collectors.toList());
+
+        TraineeProfileResponse response = new TraineeProfileResponse(trainee.getUser().getFirstName(),
+                trainee.getUser().getLastName(),
+                trainee.getDateOfBirth(),
+                trainee.getAddress(),
+                trainee.getUser().isActive(),
+                trainersDto);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
@@ -96,10 +130,10 @@ public class TraineeController {
     public ResponseEntity<Void> deleteTrainee(@PathVariable String username,
                                               @RequestHeader("X-Auth-Token") String token
     ) {
-        if (!tokenService.isValidToken(token)){
+        if (!tokenService.isValidToken(username, token)){
             throw new InvalidTokenException("Token not authenticated");
         }
-        facadeService.deleteTrainee(username);
+        traineeService.deleteTrainee(username);
         return ResponseEntity.noContent().build();
     }
 
@@ -125,7 +159,7 @@ public class TraineeController {
             @RequestParam(required = false) String specialization,
             @RequestHeader("X-Auth-Token") String token
     ) {
-        if (!tokenService.isValidToken(token)){
+        if (!tokenService.isValidToken(username, token)){
             throw new InvalidTokenException("Token not authenticated");
         }
 
@@ -153,7 +187,7 @@ public class TraineeController {
             @Valid @RequestBody UpdateTraineeTrainersRequest request,
             @RequestHeader("X-Auth-Token") String token
     ) {
-        if (!tokenService.isValidToken(token)){
+        if (!tokenService.isValidToken(username, token)){
             throw new InvalidTokenException("Token not authenticated");
         }
         TraineeTrainerResponse response = facadeService.updateTraineeTrainers(username, request);
@@ -174,10 +208,10 @@ public class TraineeController {
             @Valid @RequestBody ActivateUserRequest request,
             @RequestHeader("X-Auth-Token") String token
     ) {
-        if (!tokenService.isValidToken(token)){
+        if (!tokenService.isValidToken(request.username(), token)){
             throw new InvalidTokenException("Token not authenticated");
         }
-        facadeService.changeTraineeActiveStatus(request.username(), request.isActive());
+        traineeService.changeActiveStatus(request.username(), request.isActive());
         return ResponseEntity.noContent().build();
     }
 
