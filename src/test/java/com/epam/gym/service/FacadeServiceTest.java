@@ -101,27 +101,27 @@ class FacadeServiceTest {
     //////////// TRAINEE TESTS /////////////////////
     ////////////////////////////////////////////////
 
-    @Test
-    void registerTrainee_Success() {
-        TraineeRegistrationRequest request = new TraineeRegistrationRequest(
-                "New", "Trainee", LocalDate.of(2001, 2, 2), "New Address");
-
-        when(traineeService.createTrainee(anyString(), anyString(), any(LocalDate.class), anyString()))
-                .thenReturn(mockTrainee);
-
-        TraineeRegistrationResponse response = facadeService.registerTrainee(request);
-
-        assertNotNull(response);
-        assertEquals(mockUserTrainee.getUsername(), response.username());
-        assertEquals(mockUserTrainee.getPassword(), response.password());
-
-        verify(traineeService).createTrainee(
-                eq(request.firstName()),
-                eq(request.lastName()),
-                eq(request.dateOfBirth()),
-                eq(request.address())
-        );
-    }
+//    @Test
+//    void registerTrainee_Success() {
+//        TraineeRegistrationRequest request = new TraineeRegistrationRequest(
+//                "New", "Trainee", LocalDate.of(2001, 2, 2), "New Address");
+//
+//        when(traineeService.createTrainee(anyString(), anyString(), any(LocalDate.class), anyString()))
+//                .thenReturn(mockTrainee);
+//
+//        TraineeRegistrationResponse response = facadeService.registerTrainee(request);
+//
+//        assertNotNull(response);
+//        assertEquals(mockUserTrainee.getUsername(), response.username());
+//        assertEquals(mockUserTrainee.getPassword(), response.password());
+//
+//        verify(traineeService).createTrainee(
+//                eq(request.firstName()),
+//                eq(request.lastName()),
+//                eq(request.dateOfBirth()),
+//                eq(request.address())
+//        );
+//    }
 
     @Test
     void getTraineeByUsername_Success() {

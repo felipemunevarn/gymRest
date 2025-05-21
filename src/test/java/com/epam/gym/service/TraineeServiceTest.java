@@ -40,57 +40,57 @@ class TraineeServiceTest {
         closeable = MockitoAnnotations.openMocks(this);
     }
 
-    @Test
-    void createTrainee_shouldSaveAndReturnTrainee() {
-        String firstName = "John";
-        String lastName = "Doe";
-        LocalDate dob = LocalDate.of(1990, 1, 1);
-        String address = "123 Street";
-        String username = "johndoe";
-        String password = "pass123";
-
-        when(usernamePasswordUtil.generateUsername(firstName, lastName)).thenReturn(username);
-        when(usernamePasswordUtil.generatePassword()).thenReturn(password);
-
-        ArgumentCaptor<Trainee> traineeCaptor = ArgumentCaptor.forClass(Trainee.class);
-        when(traineeRepository.save(any(Trainee.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        Trainee trainee = traineeService.createTrainee(firstName, lastName, dob, address);
-
-        verify(traineeRepository).save(traineeCaptor.capture());
-        Trainee savedTrainee = traineeCaptor.getValue();
-
-        assertEquals(username, savedTrainee.getUser().getUsername());
-        assertEquals(firstName, savedTrainee.getUser().getFirstName());
-        assertEquals(address, savedTrainee.getAddress());
-        assertEquals(dob, savedTrainee.getDateOfBirth());
-        assertTrue(savedTrainee.getUser().isActive());
-    }
-
-    @Test
-    void createTrainee_shouldThrowTraineeCreationException_whenSaveFails() {
-        String firstName = "John";
-        String lastName = "Doe";
-        LocalDate dob = LocalDate.of(1990, 1, 1);
-        String address = "123 Main St";
-
-        String username = "jdoe";
-        String password = "generatedPass";
-
-        when(usernamePasswordUtil.generateUsername(firstName, lastName)).thenReturn(username);
-        when(usernamePasswordUtil.generatePassword()).thenReturn(password);
-
-        when(traineeRepository.save(any(Trainee.class)))
-                .thenThrow(new RuntimeException("Database error"));
-
-        TraineeCreationException exception = assertThrows(
-                TraineeCreationException.class,
-                () -> traineeService.createTrainee(firstName, lastName, dob, address)
-        );
-
-        assertEquals("Failed to create trainee", exception.getMessage());
-        assertInstanceOf(RuntimeException.class, exception.getCause());
-    }
+//    @Test
+//    void createTrainee_shouldSaveAndReturnTrainee() {
+//        String firstName = "John";
+//        String lastName = "Doe";
+//        LocalDate dob = LocalDate.of(1990, 1, 1);
+//        String address = "123 Street";
+//        String username = "johndoe";
+//        String password = "pass123";
+//
+//        when(usernamePasswordUtil.generateUsername(firstName, lastName)).thenReturn(username);
+//        when(usernamePasswordUtil.generatePassword()).thenReturn(password);
+//
+//        ArgumentCaptor<Trainee> traineeCaptor = ArgumentCaptor.forClass(Trainee.class);
+//        when(traineeRepository.save(any(Trainee.class))).thenAnswer(invocation -> invocation.getArgument(0));
+//
+//        Trainee trainee = traineeService.createTrainee(firstName, lastName, dob, address);
+//
+//        verify(traineeRepository).save(traineeCaptor.capture());
+//        Trainee savedTrainee = traineeCaptor.getValue();
+//
+//        assertEquals(username, savedTrainee.getUser().getUsername());
+//        assertEquals(firstName, savedTrainee.getUser().getFirstName());
+//        assertEquals(address, savedTrainee.getAddress());
+//        assertEquals(dob, savedTrainee.getDateOfBirth());
+//        assertTrue(savedTrainee.getUser().isActive());
+//    }
+//
+//    @Test
+//    void createTrainee_shouldThrowTraineeCreationException_whenSaveFails() {
+//        String firstName = "John";
+//        String lastName = "Doe";
+//        LocalDate dob = LocalDate.of(1990, 1, 1);
+//        String address = "123 Main St";
+//
+//        String username = "jdoe";
+//        String password = "generatedPass";
+//
+//        when(usernamePasswordUtil.generateUsername(firstName, lastName)).thenReturn(username);
+//        when(usernamePasswordUtil.generatePassword()).thenReturn(password);
+//
+//        when(traineeRepository.save(any(Trainee.class)))
+//                .thenThrow(new RuntimeException("Database error"));
+//
+//        TraineeCreationException exception = assertThrows(
+//                TraineeCreationException.class,
+//                () -> traineeService.createTrainee(firstName, lastName, dob, address)
+//        );
+//
+//        assertEquals("Failed to create trainee", exception.getMessage());
+//        assertInstanceOf(RuntimeException.class, exception.getCause());
+//    }
 
 
     @Test

@@ -34,15 +34,15 @@ public class FacadeService {
     //////////// TRAINEE ///////////////////////////
     ////////////////////////////////////////////////
 
-    @Transactional
-    public TraineeRegistrationResponse registerTrainee(TraineeRegistrationRequest request) {
-        Trainee trainee = traineeService.createTrainee(request.firstName(),
-                request.lastName(),
-                request.dateOfBirth(),
-                request.address());
-        return new TraineeRegistrationResponse(trainee.getUser().getUsername(),
-                trainee.getUser().getPassword());
-    }
+//    @Transactional
+//    public TraineeRegistrationResponse registerTrainee(TraineeRegistrationRequest request) {
+//        Trainee trainee = traineeService.createTrainee(request.firstName(),
+//                request.lastName(),
+//                request.dateOfBirth(),
+//                request.address());
+//        return new TraineeRegistrationResponse(trainee.getUser().getUsername(),
+//                trainee.getUser().getPassword());
+//    }
 
     @Transactional
     public TraineeProfileResponse getTraineeByUsername(String username) {

@@ -56,7 +56,7 @@ public class TrainerController {
             @PathVariable @NotBlank String username,
             @RequestHeader("X-Auth-Token") String token
     ) {
-        if (!tokenService.isValidToken(token)){
+        if (!tokenService.isValidToken(username, token)){
             throw new InvalidTokenException("Token not authenticated");
         }
         TrainerProfileResponse response = facadeService.getTrainerByUsername(username);
@@ -76,7 +76,7 @@ public class TrainerController {
             @Valid @RequestBody TrainerUpdateRequest request,
             @RequestHeader("X-Auth-Token") String token
     ) {
-        if (!tokenService.isValidToken(token)){
+        if (!tokenService.isValidToken(request.username(), token)){
             throw new InvalidTokenException("Token not authenticated");
         }
         TrainerProfileResponse response = facadeService.updateTrainer(request);
@@ -96,7 +96,7 @@ public class TrainerController {
             @RequestParam String traineeUsername,
             @RequestHeader("X-Auth-Token") String token
     ) {
-        if (!tokenService.isValidToken(token)){
+        if (!tokenService.isValidToken(traineeUsername, token)){
             throw new InvalidTokenException("Token not authenticated");
         }
         List<TrainerDto> trainers = facadeService.getAvailableTrainersForTrainee(traineeUsername);
@@ -123,7 +123,7 @@ public class TrainerController {
             @RequestParam(required = false) String traineeName,
             @RequestHeader("X-Auth-Token") String token
     ) {
-        if (!tokenService.isValidToken(token)){
+        if (!tokenService.isValidToken(username, token)){
             throw new InvalidTokenException("Token not authenticated");
         }
 
@@ -148,7 +148,7 @@ public class TrainerController {
             @Valid @RequestBody ActivateUserRequest request,
             @RequestHeader("X-Auth-Token") String token
     ) {
-        if (!tokenService.isValidToken(token)){
+        if (!tokenService.isValidToken(request.username(), token)){
             throw new InvalidTokenException("Token not authenticated");
         }
         facadeService.changeTrainerActiveStatus(request.username(), request.isActive());

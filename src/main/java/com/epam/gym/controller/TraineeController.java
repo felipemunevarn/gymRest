@@ -47,13 +47,7 @@ public class TraineeController {
     public ResponseEntity<TraineeRegistrationResponse> registerTrainee(
             @Valid @RequestBody TraineeRegistrationRequest request
     ) {
-//        TraineeRegistrationResponse response = facadeService.registerTrainee(request);
-        Trainee trainee = traineeService.createTrainee(request.firstName(),
-                request.lastName(),
-                request.dateOfBirth(),
-                request.address());
-        TraineeRegistrationResponse response = new TraineeRegistrationResponse(trainee.getUser().getUsername(),
-                trainee.getUser().getPassword());
+        TraineeRegistrationResponse response = traineeService.createTrainee(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

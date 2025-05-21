@@ -1,9 +1,12 @@
 package com.epam.gym.service;
 
+import com.epam.gym.dto.TraineeRegistrationRequest;
+import com.epam.gym.dto.TraineeRegistrationResponse;
 import com.epam.gym.entity.Trainee;
 import com.epam.gym.entity.Trainer;
 import com.epam.gym.entity.User;
 import com.epam.gym.exception.TraineeCreationException;
+import com.epam.gym.mapper.TraineeMapper;
 import com.epam.gym.repository.TraineeRepository;
 import com.epam.gym.util.UsernamePasswordUtil;
 import jakarta.annotation.Nullable;
@@ -24,41 +27,48 @@ public class TraineeService {
     private static final Logger log = LoggerFactory.getLogger(TraineeService.class);
     private final TraineeRepository traineeRepository;
     private final UsernamePasswordUtil usernamePasswordUtil;
+    private final TraineeMapper traineeMapper;
 
     @Autowired
-    public TraineeService(TraineeRepository traineeRepository,
-                          UsernamePasswordUtil usernamePasswordUtil) {
+    public TraineeService(
+            TraineeRepository traineeRepository,
+            UsernamePasswordUtil usernamePasswordUtil,
+            TraineeMapper traineeMapper
+    ) {
         this.traineeRepository = traineeRepository;
         this.usernamePasswordUtil = usernamePasswordUtil;
+        this.traineeMapper = traineeMapper;
     }
 
     @Transactional
-    public Trainee createTrainee(String firstName,
-                                 String lastName,
-                                 LocalDate dateOfBirth,
-                                 String address) {
+    public TraineeRegistrationResponse createTrainee(
+            TraineeRegistrationRequest request
+    ) {
 
-        String username = usernamePasswordUtil.generateUsername(firstName, lastName);
+        String username = usernamePasswordUtil.generateUsername(
+                request.firstName(),
+                request.lastName()
+        );
         String password = usernamePasswordUtil.generatePassword();
 
         User user = new User.Builder()
-                .firstName(firstName)
-                .lastName(lastName)
+                .firstName(request.firstName())
+                .lastName(request.lastName())
                 .username(username)
                 .password(password)
                 .isActive(true)
                 .build();
 
         Trainee trainee = new Trainee.Builder()
-                .dateOfBirth(dateOfBirth)
-                .address(address)
+                .dateOfBirth(request.dateOfBirth())
+                .address(request.address())
                 .user(user)
                 .build();
         log.info("Creating trainee: {}", user.getUsername());
         try {
             traineeRepository.save(trainee);
             log.info("Trainee {} created successfully with ID: {}", user.getUsername(), trainee.getId());
-            return trainee;
+            return  traineeMapper.toTraineeRegistrationResponse(trainee);
         } catch (Exception e) {
             log.error("Failed to save trainee: {}", e.getMessage(), e);
             throw new TraineeCreationException("Failed to create trainee", e);
