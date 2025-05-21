@@ -16,8 +16,8 @@ public class TokenService {
         return token;
     }
 
-    public boolean isValidToken(String token) {
-        return tokenStore.containsKey(token);
+    public boolean isValidToken(String username, String token) {
+        return tokenStore.get(token).equals(username);
     }
 
     public String getUsername(String token) {
