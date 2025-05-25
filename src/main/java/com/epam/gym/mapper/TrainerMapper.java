@@ -2,8 +2,8 @@ package com.epam.gym.mapper;
 
 import com.epam.gym.dto.TraineeProfileResponse;
 import com.epam.gym.dto.TraineeRegistrationResponse;
-import com.epam.gym.dto.TraineeTrainerResponse;
 import com.epam.gym.dto.TrainerDto;
+import com.epam.gym.dto.TrainerProfileResponse;
 import com.epam.gym.entity.Trainee;
 import com.epam.gym.entity.Trainer;
 import org.springframework.stereotype.Component;
@@ -13,27 +13,27 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Mapper component for converting Trainee entities to TraineeProfileResponse DTOs.
+ * Mapper component for converting Trainer entities to TrainerProfileResponse DTOs.
  */
 @Component
-public class TraineeMapper {
+public class TrainerMapper {
 
-    public TraineeProfileResponse toTraineeProfileResponse(Trainee trainee) {
-        if (trainee == null) {
-            return null;
-        }
-
-        List<TrainerDto> trainersDto = mapTrainersToTrainerDtoList(trainee.getTrainers());
-
-        return new TraineeProfileResponse(
-                trainee.getUser().getFirstName(),
-                trainee.getUser().getLastName(),
-                trainee.getDateOfBirth(),
-                trainee.getAddress(),
-                trainee.getUser().isActive(),
-                trainersDto
-        );
-    }
+//    public TrainerProfileResponse toTraineeProfileResponse(Trainee trainee) {
+//        if (trainee == null) {
+//            return null;
+//        }
+//
+//        List<TrainerDto> trainersDto = mapTrainersToTrainerDtoList(trainee.getTrainers());
+//
+//        return new TraineeProfileResponse(
+//                trainee.getUser().getFirstName(),
+//                trainee.getUser().getLastName(),
+//                trainee.getDateOfBirth(),
+//                trainee.getAddress(),
+//                trainee.getUser().isActive(),
+//                trainersDto
+//        );
+//    }
 
     public TraineeRegistrationResponse toTraineeRegistrationResponse(Trainee trainee) {
         if (trainee == null) {
@@ -46,7 +46,7 @@ public class TraineeMapper {
         );
     }
 
-    public List<TrainerDto> mapTrainersToTrainerDtoList(Set<Trainer> trainers) {
+    private List<TrainerDto> mapTrainersToTrainerDtoList(Set<Trainer> trainers) {
         if (trainers == null) {
             return List.of();
         }
@@ -59,8 +59,6 @@ public class TraineeMapper {
                 ))
                 .collect(Collectors.toList());
     }
-
-//    public TraineeTrainerResponse updateTraineeTrainers(
 
     // public Trainee toTraineeEntity(TraineeUpdateRequest request) { ... }
     // public Trainee toTraineeEntity(TraineeRegistrationRequest request) { ... }

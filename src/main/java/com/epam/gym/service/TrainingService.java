@@ -1,6 +1,9 @@
 package com.epam.gym.service;
 
+import com.epam.gym.dto.TraineeTrainingRequest;
+import com.epam.gym.dto.TraineeTrainingResponse;
 import com.epam.gym.entity.*;
+import com.epam.gym.mapper.TrainingMapper;
 import com.epam.gym.repository.TrainingRepository;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
@@ -17,10 +20,15 @@ public class TrainingService {
     private static final Logger log = LoggerFactory.getLogger(TrainingService.class);
 
     private final TrainingRepository trainingRepository;
+    private final TrainingMapper trainingMapper;
 
     @Autowired
-    public TrainingService(TrainingRepository trainingRepository) {
+    public TrainingService(
+            TrainingRepository trainingRepository,
+            TrainingMapper trainingMapper
+    ) {
         this.trainingRepository = trainingRepository;
+        this.trainingMapper = trainingMapper;
     }
 
     @Transactional
@@ -49,16 +57,23 @@ public class TrainingService {
     }
 
     @Transactional
-    public List<Training> getTraineeTrainings(String username,
-                                              LocalDate from,
-                                              LocalDate to,
-                                              String trainerName,
-                                              TrainingType type) {
-        return trainingRepository.findTraineeTrainingsByCriteria(username,
-                from,
-                to,
-                trainerName,
-                type);
+    public List<TraineeTrainingResponse> getTraineeTrainings(
+            String username,
+            TraineeTrainingRequest request
+//            LocalDate from,
+//            LocalDate to,
+//            String trainerName,
+//            TrainingType type
+    ) {
+        TrainingType specialization = new TrainingType(TrainingTypeEnum.valueOf(request.specialization()));
+        List<Training> trainings = trainingRepository.findTraineeTrainingsByCriteria(
+                username,
+                request.from(),
+                request.to(),
+                request.trainerName(),
+                specialization
+        );
+        return trainingMapper.mapTrainingsToDtoResponseList(trainings);
     }
 
     @Transactional

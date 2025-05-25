@@ -44,66 +44,66 @@ public class FacadeService {
 //                trainee.getUser().getPassword());
 //    }
 
-    @Transactional
-    public TraineeProfileResponse getTraineeByUsername(String username) {
-        Trainee trainee = traineeService.findTraineeByUsername(username);
-        List<TrainerDto> trainersDto = trainee.getTrainers().stream()
-                .map(trainer -> new TrainerDto(trainer.getUser().getUsername(),
-                        trainer.getUser().getFirstName(),
-                        trainer.getUser().getLastName(),
-                        trainer.getTrainingType().getType().toString()))
-//                toList();
-                .collect(Collectors.toList());
+//    @Transactional
+//    public TraineeProfileResponse getTraineeByUsername(String username) {
+//        Trainee trainee = traineeService.findTraineeByUsername(username);
 //        List<TrainerDto> trainersDto = trainee.getTrainers().stream()
 //                .map(trainer -> new TrainerDto(trainer.getUser().getUsername(),
 //                        trainer.getUser().getFirstName(),
 //                        trainer.getUser().getLastName(),
 //                        trainer.getTrainingType().getType().toString()))
-        return new TraineeProfileResponse(trainee.getUser().getFirstName(),
-                trainee.getUser().getLastName(),
-                trainee.getDateOfBirth(),
-                trainee.getAddress(),
-                trainee.getUser().isActive(),
-                trainersDto);
-    }
+////                toList();
+//                .collect(Collectors.toList());
+////        List<TrainerDto> trainersDto = trainee.getTrainers().stream()
+////                .map(trainer -> new TrainerDto(trainer.getUser().getUsername(),
+////                        trainer.getUser().getFirstName(),
+////                        trainer.getUser().getLastName(),
+////                        trainer.getTrainingType().getType().toString()))
+//        return new TraineeProfileResponse(trainee.getUser().getFirstName(),
+//                trainee.getUser().getLastName(),
+//                trainee.getDateOfBirth(),
+//                trainee.getAddress(),
+//                trainee.getUser().isActive(),
+//                trainersDto);
+//    }
 
-    @Transactional
-    public TraineeProfileResponse updateTrainee(TraineeUpdateRequest request) {
-        traineeService.updateTrainee(request.username(),
-                request.firstName(),
-                request.lastName(),
-                request.dateOfBirth(),
-                request.address(),
-                request.isActive()
-                );
-        return getTraineeByUsername(request.username());
-    }
+//    @Transactional
+//    public TraineeProfileResponse updateTrainee(TraineeUpdateRequest request) {
+//        traineeService.updateTrainee(request.username(),
+//                request.firstName(),
+//                request.lastName(),
+//                request.dateOfBirth(),
+//                request.address(),
+//                request.isActive()
+//                );
+//        return getTraineeByUsername(request.username());
+//    }
 
-    @Transactional
-    public void deleteTrainee(String username) {
-        traineeService.deleteTrainee(username);
-    }
+//    @Transactional
+//    public void deleteTrainee(String username) {
+//        traineeService.deleteTrainee(username);
+//    }
 
-    @Transactional
-    public TraineeTrainerResponse updateTraineeTrainers(String username,
-                                                        UpdateTraineeTrainersRequest request){
-        List<Trainer> trainers = trainerService.getTrainersByUsernames(request.trainerUsernames());
+//    @Transactional
+//    public TraineeTrainerResponse updateTraineeTrainers(String username,
+//                                                        UpdateTraineeTrainersRequest request){
+//        List<Trainer> trainers = trainerService.getTrainersByUsernames(request.trainerUsernames());
+//
+//        traineeService.updateTraineeTrainers(username, trainers);
+//
+//        List<TrainerDto> trainersDto = trainers.stream().
+//                map(trainer -> new TrainerDto(trainer.getUser().getUsername(),
+//                        trainer.getUser().getFirstName(),
+//                        trainer.getUser().getLastName(),
+//                        trainer.getTrainingType().getType().toString()
+//                        )).toList();
+//        return new TraineeTrainerResponse(trainersDto);
+//    }
 
-        traineeService.updateTraineeTrainers(username, trainers);
-
-        List<TrainerDto> trainersDto = trainers.stream().
-                map(trainer -> new TrainerDto(trainer.getUser().getUsername(),
-                        trainer.getUser().getFirstName(),
-                        trainer.getUser().getLastName(),
-                        trainer.getTrainingType().getType().toString()
-                        )).toList();
-        return new TraineeTrainerResponse(trainersDto);
-    }
-
-    @Transactional
-    public void changeTraineeActiveStatus(String username, boolean isActive) {
-        traineeService.changeActiveStatus(username, isActive);
-    }
+//    @Transactional
+//    public void changeTraineeActiveStatus(String username, boolean isActive) {
+//        traineeService.changeActiveStatus(username, isActive);
+//    }
 
     ////////////////////////////////////////////////
     //////////// TRAINER ///////////////////////////
@@ -169,7 +169,8 @@ public class FacadeService {
 
     @Transactional
     public void registerTraining(TrainingRegistrationRequest request) {
-        Trainee trainee = traineeService.findTraineeByUsername(request.traineeUsername());
+//        Trainee trainee = traineeService.findTraineeByUsername(request.traineeUsername());
+        Trainee trainee = null;
         Trainer trainer = trainerService.findTrainerByUsername(request.trainerUsername());
         trainingService.createTraining(trainee,
                 trainer,
@@ -179,26 +180,26 @@ public class FacadeService {
                 request.duration());
     }
 
-    @Transactional
-    public List<TraineeTrainingResponse> findTraineeTrainings(String username,
-                                                              TraineeTrainingRequest request) {
-        TrainingType trainingType = null;
-        if (request.specialization() != null) {
-            trainingType = trainingTypeService.findByType(request.specialization());
-        }
-        List<Training> trainings = trainingService.getTraineeTrainings(username,
-                request.from(),
-                request.to(),
-                request.trainerName(),
-                trainingType);
-        return trainings.stream().
-                map(training -> new TraineeTrainingResponse(training.getName(),
-                        training.getDate().toString(),
-                        training.getTrainingType().getType().toString(),
-                        training.getDuration(),
-                        training.getTrainer().getUser().getUsername()))
-                .toList();
-    }
+//    @Transactional
+//    public List<TraineeTrainingResponse> findTraineeTrainings(String username,
+//                                                              TraineeTrainingRequest request) {
+//        TrainingType trainingType = null;
+//        if (request.specialization() != null) {
+//            trainingType = trainingTypeService.findByType(request.specialization());
+//        }
+//        List<Training> trainings = trainingService.getTraineeTrainings(username,
+//                request.from(),
+//                request.to(),
+//                request.trainerName(),
+//                trainingType);
+//        return trainings.stream().
+//                map(training -> new TraineeTrainingResponse(training.getName(),
+//                        training.getDate().toString(),
+//                        training.getTrainingType().getType().toString(),
+//                        training.getDuration(),
+//                        training.getTrainer().getUser().getUsername()))
+//                .toList();
+//    }
 
     @Transactional
     public List<TrainerTrainingResponse> findTrainerTrainings(String username,

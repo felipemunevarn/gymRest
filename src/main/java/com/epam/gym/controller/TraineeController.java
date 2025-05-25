@@ -6,6 +6,7 @@ import com.epam.gym.exception.InvalidTokenException;
 import com.epam.gym.service.FacadeService;
 import com.epam.gym.service.TokenService;
 import com.epam.gym.service.TraineeService;
+import com.epam.gym.service.TrainingService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,16 +26,19 @@ public class TraineeController {
     private final FacadeService facadeService;
     private final TokenService tokenService;
     private final TraineeService traineeService;
+    private final TrainingService trainingService;
 
     @Autowired
     public TraineeController(
             FacadeService facadeService,
             TokenService tokenService,
-            TraineeService traineeService
+            TraineeService traineeService,
+            TrainingService trainingService
     ) {
         this.facadeService = facadeService;
         this.tokenService = tokenService;
         this.traineeService = traineeService;
+        this.trainingService = trainingService;
     }
 
     /**
@@ -67,7 +71,7 @@ public class TraineeController {
         if (!tokenService.isValidToken(username, token)){
             throw new InvalidTokenException("Token not authenticated");
         }
-        TraineeProfileResponse response = facadeService.getTraineeByUsername(username);
+        TraineeProfileResponse response = traineeService.findTraineeByUsername(username);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
@@ -87,28 +91,30 @@ public class TraineeController {
         if (!tokenService.isValidToken(request.username(), token)){
             throw new InvalidTokenException("Token not authenticated");
         }
-        traineeService.updateTrainee(request.username(),
-                request.firstName(),
-                request.lastName(),
-                request.dateOfBirth(),
-                request.address(),
-                request.isActive()
-        );
-        Trainee trainee = traineeService.findTraineeByUsername(request.username());
+//        traineeService.updateTrainee(request.username(),
+//                request.firstName(),
+//                request.lastName(),
+//                request.dateOfBirth(),
+//                request.address(),
+//                request.isActive()
+//        );
+        TraineeProfileResponse response = traineeService.updateTrainee(request);
 
-        List<TrainerDto> trainersDto = trainee.getTrainers().stream()
-                .map(trainer -> new TrainerDto(trainer.getUser().getUsername(),
-                        trainer.getUser().getFirstName(),
-                        trainer.getUser().getLastName(),
-                        trainer.getTrainingType().getType().toString()))
-                .collect(Collectors.toList());
-
-        TraineeProfileResponse response = new TraineeProfileResponse(trainee.getUser().getFirstName(),
-                trainee.getUser().getLastName(),
-                trainee.getDateOfBirth(),
-                trainee.getAddress(),
-                trainee.getUser().isActive(),
-                trainersDto);
+//        TraineeProfileResponse trainee = traineeService.findTraineeByUsername(request.username());
+//
+//        List<TrainerDto> trainersDto = trainee.getTrainers().stream()
+//                .map(trainer -> new TrainerDto(trainer.getUser().getUsername(),
+//                        trainer.getUser().getFirstName(),
+//                        trainer.getUser().getLastName(),
+//                        trainer.getTrainingType().getType().toString()))
+//                .collect(Collectors.toList());
+//
+//        TraineeProfileResponse response = new TraineeProfileResponse(trainee.getUser().getFirstName(),
+//                trainee.getUser().getLastName(),
+//                trainee.getDateOfBirth(),
+//                trainee.getAddress(),
+//                trainee.getUser().isActive(),
+//                trainersDto);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
@@ -162,7 +168,11 @@ public class TraineeController {
                 trainerName,
                 specialization);
 
-        List<TraineeTrainingResponse> response = facadeService.findTraineeTrainings(username, request);
+//        List<TraineeTrainingResponse> response = facadeService.findTraineeTrainings(username, request);
+        List<TraineeTrainingResponse> response = trainingService.getTraineeTrainings(
+                username,
+                request
+        );
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
@@ -184,7 +194,8 @@ public class TraineeController {
         if (!tokenService.isValidToken(username, token)){
             throw new InvalidTokenException("Token not authenticated");
         }
-        TraineeTrainerResponse response = facadeService.updateTraineeTrainers(username, request);
+//        TraineeTrainerResponse response = facadeService.updateTraineeTrainers(username, request);
+        TraineeTrainerResponse response = traineeService.updateTraineeTrainers(username, request);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
