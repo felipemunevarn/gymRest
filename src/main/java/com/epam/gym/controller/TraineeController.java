@@ -1,7 +1,6 @@
 package com.epam.gym.controller;
 
 import com.epam.gym.dto.*;
-import com.epam.gym.entity.Trainee;
 import com.epam.gym.exception.InvalidTokenException;
 import com.epam.gym.service.FacadeService;
 import com.epam.gym.service.TokenService;
@@ -17,25 +16,21 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/api/v1/trainees")
 public class TraineeController {
 
-    private final FacadeService facadeService;
     private final TokenService tokenService;
     private final TraineeService traineeService;
     private final TrainingService trainingService;
 
     @Autowired
     public TraineeController(
-            FacadeService facadeService,
             TokenService tokenService,
             TraineeService traineeService,
             TrainingService trainingService
     ) {
-        this.facadeService = facadeService;
         this.tokenService = tokenService;
         this.traineeService = traineeService;
         this.trainingService = trainingService;
@@ -91,30 +86,7 @@ public class TraineeController {
         if (!tokenService.isValidToken(request.username(), token)){
             throw new InvalidTokenException("Token not authenticated");
         }
-//        traineeService.updateTrainee(request.username(),
-//                request.firstName(),
-//                request.lastName(),
-//                request.dateOfBirth(),
-//                request.address(),
-//                request.isActive()
-//        );
         TraineeProfileResponse response = traineeService.updateTrainee(request);
-
-//        TraineeProfileResponse trainee = traineeService.findTraineeByUsername(request.username());
-//
-//        List<TrainerDto> trainersDto = trainee.getTrainers().stream()
-//                .map(trainer -> new TrainerDto(trainer.getUser().getUsername(),
-//                        trainer.getUser().getFirstName(),
-//                        trainer.getUser().getLastName(),
-//                        trainer.getTrainingType().getType().toString()))
-//                .collect(Collectors.toList());
-//
-//        TraineeProfileResponse response = new TraineeProfileResponse(trainee.getUser().getFirstName(),
-//                trainee.getUser().getLastName(),
-//                trainee.getDateOfBirth(),
-//                trainee.getAddress(),
-//                trainee.getUser().isActive(),
-//                trainersDto);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 

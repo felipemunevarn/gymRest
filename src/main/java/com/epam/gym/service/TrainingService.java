@@ -2,6 +2,8 @@ package com.epam.gym.service;
 
 import com.epam.gym.dto.TraineeTrainingRequest;
 import com.epam.gym.dto.TraineeTrainingResponse;
+import com.epam.gym.dto.TrainerTrainingRequest;
+import com.epam.gym.dto.TrainerTrainingResponse;
 import com.epam.gym.entity.*;
 import com.epam.gym.mapper.TrainingMapper;
 import com.epam.gym.repository.TrainingRepository;
@@ -60,10 +62,6 @@ public class TrainingService {
     public List<TraineeTrainingResponse> getTraineeTrainings(
             String username,
             TraineeTrainingRequest request
-//            LocalDate from,
-//            LocalDate to,
-//            String trainerName,
-//            TrainingType type
     ) {
         TrainingType specialization = new TrainingType(TrainingTypeEnum.valueOf(request.specialization()));
         List<Training> trainings = trainingRepository.findTraineeTrainingsByCriteria(
@@ -73,18 +71,21 @@ public class TrainingService {
                 request.trainerName(),
                 specialization
         );
-        return trainingMapper.mapTrainingsToDtoResponseList(trainings);
+        return trainingMapper.mapTrainingsToTraineeDtoResponseList(trainings);
     }
 
     @Transactional
-    public List<Training> getTrainerTrainings(String username,
-                                              LocalDate from,
-                                              LocalDate to,
-                                              String traineeName) {
-        return trainingRepository.findTrainerTrainingsByCriteria(username,
-                from,
-                to,
-                traineeName);
+    public List<TrainerTrainingResponse> getTrainerTrainings(
+            String username,
+            TrainerTrainingRequest request
+    ) {
+        List<Training> trainings = trainingRepository.findTrainerTrainingsByCriteria(
+                username,
+                request.from(),
+                request.to(),
+                request.traineeName()
+        );
+        return trainingMapper.mapTrainingsToTrainerDtoResponseList(trainings);
     }
 
 }

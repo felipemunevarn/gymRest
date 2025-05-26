@@ -92,54 +92,6 @@ public class TraineeService {
         return traineeMapper.toTraineeProfileResponse(trainee);
     }
 
-//    @Transactional
-//    public void updateTrainee(String username,
-//                              String firstName,
-//                              String lastName,
-//                              @Nullable LocalDate dateOfBirth,
-//                              @Nullable String address,
-//                              boolean isActive
-//    ) {
-////        Trainee trainee = findTraineeByUsername(username);
-//
-//        boolean updated = false;
-//
-//        Trainee.Builder traineeBuilder = trainee.toBuilder();
-//
-//        User user = trainee.getUser();
-//
-//        if (!firstName.equals(user.getFirstName()) ||
-//            !lastName.equals(user.getLastName()) ||
-//            (isActive != user.isActive())
-//        ) {
-//            updated = true;
-//        }
-//
-//        User userUpdated = user.toBuilder()
-//                .firstName(firstName)
-//                .lastName(lastName)
-//                .isActive(isActive)
-//                .build();
-//
-//        traineeBuilder.user(userUpdated);
-//
-//        if (dateOfBirth != null) {
-//            traineeBuilder.dateOfBirth(dateOfBirth);
-//            updated = true;
-//        }
-//        if (address != null) {
-//            traineeBuilder.address(address);
-//            updated = true;
-//        }
-//
-//        if (updated) {
-//            traineeRepository.save(traineeBuilder.build());
-//            log.info("Trainee with username '{}' updated successfully!", username);
-//        } else {
-//            log.info("No updates applied for trainee with username '{}'.", username);
-//        }
-//    }
-
     @Transactional
     public TraineeProfileResponse updateTrainee(TraineeUpdateRequest request) {
         Trainee trainee = traineeRepository.findByUserUsername(request.username())

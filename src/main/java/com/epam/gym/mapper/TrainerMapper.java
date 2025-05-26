@@ -1,9 +1,6 @@
 package com.epam.gym.mapper;
 
-import com.epam.gym.dto.TraineeProfileResponse;
-import com.epam.gym.dto.TraineeRegistrationResponse;
-import com.epam.gym.dto.TrainerDto;
-import com.epam.gym.dto.TrainerProfileResponse;
+import com.epam.gym.dto.*;
 import com.epam.gym.entity.Trainee;
 import com.epam.gym.entity.Trainer;
 import org.springframework.stereotype.Component;
@@ -18,44 +15,42 @@ import java.util.stream.Collectors;
 @Component
 public class TrainerMapper {
 
-//    public TrainerProfileResponse toTraineeProfileResponse(Trainee trainee) {
-//        if (trainee == null) {
-//            return null;
-//        }
-//
-//        List<TrainerDto> trainersDto = mapTrainersToTrainerDtoList(trainee.getTrainers());
-//
-//        return new TraineeProfileResponse(
-//                trainee.getUser().getFirstName(),
-//                trainee.getUser().getLastName(),
-//                trainee.getDateOfBirth(),
-//                trainee.getAddress(),
-//                trainee.getUser().isActive(),
-//                trainersDto
-//        );
-//    }
-
-    public TraineeRegistrationResponse toTraineeRegistrationResponse(Trainee trainee) {
-        if (trainee == null) {
+    public TrainerProfileResponse toTrainerProfileResponse(Trainer trainer) {
+        if (trainer == null) {
             return null;
         }
 
-        return new TraineeRegistrationResponse(
-                trainee.getUser().getUsername(),
-                trainee.getUser().getPassword()
+        List<TraineeDto> traineesDto = mapTraineesToTraineeDtoList(trainer.getTrainees());
+
+        return new TrainerProfileResponse(
+                trainer.getUser().getFirstName(),
+                trainer.getUser().getLastName(),
+                trainer.getTrainingType(),
+                trainer.getUser().isActive(),
+                traineesDto
         );
     }
 
-    private List<TrainerDto> mapTrainersToTrainerDtoList(Set<Trainer> trainers) {
-        if (trainers == null) {
+    public TrainerRegistrationResponse toTrainerRegistrationResponse(Trainer trainer) {
+        if (trainer == null) {
+            return null;
+        }
+
+        return new TrainerRegistrationResponse(
+                trainer.getUser().getUsername(),
+                trainer.getUser().getPassword()
+        );
+    }
+
+    private List<TraineeDto> mapTraineesToTraineeDtoList(Set<Trainee> trainees) {
+        if (trainees == null) {
             return List.of();
         }
-        return trainers.stream()
-                .map(trainer -> new TrainerDto(
-                        trainer.getUser().getUsername(),
-                        trainer.getUser().getFirstName(),
-                        trainer.getUser().getLastName(),
-                        trainer.getTrainingType().getType().toString()
+        return trainees.stream()
+                .map(trainee -> new TraineeDto(
+                        trainee.getUser().getUsername(),
+                        trainee.getUser().getFirstName(),
+                        trainee.getUser().getLastName()
                 ))
                 .collect(Collectors.toList());
     }

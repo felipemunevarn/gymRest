@@ -1,9 +1,10 @@
 package com.epam.gym.service;
 
-import com.epam.gym.entity.Trainer;
-import com.epam.gym.entity.TrainingType;
-import com.epam.gym.entity.User;
+import com.epam.gym.dto.*;
+import com.epam.gym.entity.*;
 import com.epam.gym.exception.TraineeCreationException;
+import com.epam.gym.mapper.TraineeMapper;
+import com.epam.gym.mapper.TrainerMapper;
 import com.epam.gym.repository.TrainerRepository;
 import com.epam.gym.util.UsernamePasswordUtil;
 import jakarta.annotation.Nullable;
@@ -14,7 +15,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class TrainerService {
@@ -22,87 +26,115 @@ public class TrainerService {
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
     private final TrainerRepository trainerRepository;
     private final UsernamePasswordUtil usernamePasswordUtil;
+    private final TrainerMapper trainerMapper;
+    private final TraineeMapper traineeMapper;
 
     @Autowired
-    public TrainerService(TrainerRepository trainerRepository,
-                          UsernamePasswordUtil usernamePasswordUtil) {
+    public TrainerService(
+            TrainerRepository trainerRepository,
+            UsernamePasswordUtil usernamePasswordUtil,
+            TrainerMapper trainerMapper,
+            TraineeMapper traineeMapper
+    ) {
         this.trainerRepository = trainerRepository;
         this.usernamePasswordUtil = usernamePasswordUtil;
+        this.trainerMapper = trainerMapper;
+        this.traineeMapper = traineeMapper;
     }
 
     @Transactional
-    public Trainer createTrainer(String firstName,
-                                 String lastName,
-                                 TrainingType trainingType) {
+    public TrainerRegistrationResponse createTrainer(
+            TrainerRegistrationRequest request
+    ) {
 
-        String username = usernamePasswordUtil.generateUsername(firstName, lastName);
+        String username = usernamePasswordUtil.generateUsername(
+                request.firstName(),
+                request.lastName()
+        );
         String password = usernamePasswordUtil.generatePassword();
 
         User user = new User.Builder()
-                .firstName(firstName)
-                .lastName(lastName)
+                .firstName(request.firstName())
+                .lastName(request.lastName())
                 .username(username)
                 .password(password)
                 .isActive(true)
                 .build();
 
         Trainer trainer = new Trainer.Builder()
-                .trainingType(trainingType)
+                .trainingType(new TrainingType(TrainingTypeEnum.valueOf(request.specialization())))
                 .user(user)
                 .build();
 
         try {
             trainerRepository.save(trainer);
-            return trainer;
+            log.info("Trainer {} created successfully with ID: {}", user.getUsername(), trainer.getId());
+            return trainerMapper.toTrainerRegistrationResponse(trainer);
         } catch (Exception e) {
+            log.error("Failed to save trainer: {}", e.getMessage(), e);
             throw new TraineeCreationException("Failed to create trainer", e);
         }
     }
 
     @Transactional
-    public Trainer findTrainerByUsername(String username) {
-        return trainerRepository.findByUserUsername(username)
-                .orElseThrow(() -> new NoResultException("Trainee not found"));
+    public TrainerProfileResponse findTrainerByUsername(String username) {
+        Trainer trainer = trainerRepository.findByUserUsername(username)
+                .orElseThrow(() -> {
+                    log.error("Trainer not found with username: {}", username);
+                    return new NoResultException("Trainer not found");
+                });
+        return trainerMapper.toTrainerProfileResponse(trainer);
     }
 
     @Transactional
-    public void updateTrainer(String username,
-                              String firstName,
-                              String lastName,
-                              @Nullable TrainingType specialization,
-                              boolean isActive) {
-        Trainer trainer = findTrainerByUsername(username);
+    public TrainerProfileResponse updateTrainer(TrainerUpdateRequest request) {
+        Trainer trainer = trainerRepository.findByUserUsername(request.username())
+                .orElseThrow(() -> {
+                    log.error("Trainer not found with username: {}", request.username());
+                    return new NoResultException("Trainer not found");
+                });
+
+        boolean updated = false;
+
         Trainer.Builder trainerBuilder = trainer.toBuilder();
 
         User user = trainer.getUser();
-        boolean updated = false;
 
-        if (!firstName.equals(user.getFirstName()) ||
-                !lastName.equals(user.getLastName()) ||
-                isActive != user.isActive()) {
-            User userUpdated = user.toBuilder()
-                    .firstName(firstName)
-                    .lastName(lastName)
-                    .isActive(isActive)
-                    .build();
-            trainerBuilder.user(userUpdated);
+        if (!request.firstName().equals(user.getFirstName()) ||
+            !request.lastName().equals(user.getLastName()) ||
+            request.isActive() != user.isActive()
+        ) {
             updated = true;
         }
 
-        if (specialization != null &&
-                !specialization.equals(trainer.getTrainingType())) {
-            trainerBuilder.trainingType(specialization);
+        User userUpdated = user.toBuilder()
+                    .firstName(request.firstName())
+                    .lastName(request.lastName())
+                    .isActive(request.isActive())
+                    .build();
+
+            trainerBuilder.user(userUpdated);
+
+        if (request.specialization() != null) {
+            trainerBuilder.trainingType(new TrainingType(TrainingTypeEnum.valueOf(request.specialization())));
             updated = true;
         }
 
         if (updated) {
-            trainerRepository.save(trainerBuilder.build());
+            Trainer updatedTrainer = trainerRepository.save(trainerBuilder.build());
+            log.info("Trainee with username '{}' updated successfully!", request.username());
+            return trainerMapper.toTrainerProfileResponse(updatedTrainer);
+        } else {
+            log.info("No updates applied for trainee with username '{}'.", request.username());
+            return trainerMapper.toTrainerProfileResponse(trainer);
         }
     }
 
     @Transactional
-    public List<Trainer> getAvailableTrainersForTrainee(String username) {
-        return trainerRepository.findActiveTrainersNotAssignedToTrainee(username);
+    public List<TrainerDto> getAvailableTrainersForTrainee(String username) {
+        List<Trainer> trainerList = trainerRepository.findActiveTrainersNotAssignedToTrainee(username);
+        Set<Trainer> trainerSet = new HashSet<>(trainerList);
+        return traineeMapper.mapTrainersToTrainerDtoList(trainerSet);
     }
 
     @Transactional
@@ -112,7 +144,11 @@ public class TrainerService {
 
     @Transactional
     public void changeActiveStatus(String username, boolean isActive) {
-        Trainer trainer = findTrainerByUsername(username);
+        Trainer trainer = trainerRepository.findByUserUsername(username)
+                .orElseThrow(() -> {
+                    log.error("Trainer not found with username: {}", username);
+                    return new NoResultException("Trainer not found");
+                });
 
         if (trainer.getUser().isActive() != isActive) {
             User updatedUser = trainer.getUser().toBuilder()

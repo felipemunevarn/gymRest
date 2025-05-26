@@ -2,8 +2,9 @@ package com.epam.gym.controller;
 
 import com.epam.gym.dto.*;
 import com.epam.gym.exception.InvalidTokenException;
-import com.epam.gym.service.FacadeService;
 import com.epam.gym.service.TokenService;
+import com.epam.gym.service.TrainerService;
+import com.epam.gym.service.TrainingService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,14 +20,19 @@ import java.util.List;
 @RequestMapping(value = "/api/v1/trainers")
 public class TrainerController {
 
-    private final FacadeService facadeService;
+    private final TrainerService trainerService;
+    private final TrainingService trainingService;
     private final TokenService tokenService;
 
     @Autowired
-    public TrainerController(FacadeService facadeService,
-                             TokenService tokenService) {
-        this.facadeService = facadeService;
+    public TrainerController(
+            TokenService tokenService,
+            TrainerService trainerService,
+            TrainingService trainingService
+    ) {
         this.tokenService = tokenService;
+        this.trainerService = trainerService;
+        this.trainingService = trainingService;
     }
 
     /**
@@ -39,7 +45,7 @@ public class TrainerController {
     public ResponseEntity<TrainerRegistrationResponse> registerTrainer(
             @Valid @RequestBody TrainerRegistrationRequest request
     ) {
-        TrainerRegistrationResponse response = facadeService.registerTrainer(request);
+        TrainerRegistrationResponse response = trainerService.createTrainer(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -59,7 +65,7 @@ public class TrainerController {
         if (!tokenService.isValidToken(username, token)){
             throw new InvalidTokenException("Token not authenticated");
         }
-        TrainerProfileResponse response = facadeService.getTrainerByUsername(username);
+        TrainerProfileResponse response = trainerService.findTrainerByUsername(username);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
@@ -79,8 +85,8 @@ public class TrainerController {
         if (!tokenService.isValidToken(request.username(), token)){
             throw new InvalidTokenException("Token not authenticated");
         }
-        TrainerProfileResponse response = facadeService.updateTrainer(request);
-        return ResponseEntity.status(HttpStatus.OK).body(response); // Changed status to OK
+        TrainerProfileResponse response = trainerService.updateTrainer(request);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     /**
@@ -99,7 +105,7 @@ public class TrainerController {
         if (!tokenService.isValidToken(traineeUsername, token)){
             throw new InvalidTokenException("Token not authenticated");
         }
-        List<TrainerDto> trainers = facadeService.getAvailableTrainersForTrainee(traineeUsername);
+        List<TrainerDto> trainers = trainerService.getAvailableTrainersForTrainee(traineeUsername);
         return ResponseEntity.ok(trainers);
     }
 
@@ -129,8 +135,11 @@ public class TrainerController {
 
         TrainerTrainingRequest request = new TrainerTrainingRequest(from, to, traineeName);
 
-        List<TrainerTrainingResponse> response = facadeService.findTrainerTrainings(username,
-                request);
+        List<TrainerTrainingResponse> response = trainingService.getTrainerTrainings(
+                username,
+                request
+        );
+
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
@@ -151,7 +160,7 @@ public class TrainerController {
         if (!tokenService.isValidToken(request.username(), token)){
             throw new InvalidTokenException("Token not authenticated");
         }
-        facadeService.changeTrainerActiveStatus(request.username(), request.isActive());
+        trainerService.changeActiveStatus(request.username(), request.isActive());
         return ResponseEntity.noContent().build();
     }
 
