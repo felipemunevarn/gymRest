@@ -1,8 +1,7 @@
 package com.epam.gym.controller;
 
 import com.epam.gym.dto.TrainingTypeResponse;
-import com.epam.gym.service.FacadeService;
-import com.epam.gym.service.TokenService;
+import com.epam.gym.service.TrainingTypeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,21 +15,18 @@ import java.util.List;
 @RequestMapping(value = "/api/training-types")
 public class TrainingTypeController {
 
-    private final FacadeService facadeService;
-    private final TokenService tokenService;
+    private final TrainingTypeService trainingTypeService;
 
     @Autowired
     public TrainingTypeController(
-            FacadeService facadeService,
-            TokenService tokenService
+            TrainingTypeService trainingTypeService
     ) {
-        this.facadeService = facadeService;
-        this.tokenService = tokenService;
+        this.trainingTypeService = trainingTypeService;
     }
 
     @GetMapping("/")
     public ResponseEntity<List<TrainingTypeResponse>> getAllTrainingTypes(){
-        List<TrainingTypeResponse> response = facadeService.findAllTrainingTypes();
+        List<TrainingTypeResponse> response = trainingTypeService.findAllTrainingTypes();
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 

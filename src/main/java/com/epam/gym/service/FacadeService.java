@@ -167,19 +167,19 @@ public class FacadeService {
     //////////// TRAINING //////////////////////////
     ////////////////////////////////////////////////
 
-    @Transactional
-    public void registerTraining(TrainingRegistrationRequest request) {
-//        Trainee trainee = traineeService.findTraineeByUsername(request.traineeUsername());
-        Trainee trainee = null;
-//        Trainer trainer = trainerService.findTrainerByUsername(request.trainerUsername());
-        Trainer trainer = null;
-        trainingService.createTraining(trainee,
-                trainer,
-                request.name(),
-                trainer.getTrainingType(),
-                request.date(),
-                request.duration());
-    }
+//    @Transactional
+//    public void registerTraining(TrainingRegistrationRequest request) {
+////        Trainee trainee = traineeService.findTraineeByUsername(request.traineeUsername());
+//        Trainee trainee = null;
+////        Trainer trainer = trainerService.findTrainerByUsername(request.trainerUsername());
+//        Trainer trainer = null;
+//        trainingService.createTraining(trainee,
+//                trainer,
+//                request.name(),
+//                trainer.getTrainingType(),
+//                request.date(),
+//                request.duration());
+//    }
 
 //    @Transactional
 //    public List<TraineeTrainingResponse> findTraineeTrainings(String username,
@@ -222,13 +222,13 @@ public class FacadeService {
     //////////// TRAINING TYPE /////////////////////
     ////////////////////////////////////////////////
 
-    @Transactional
-    public List<TrainingTypeResponse> findAllTrainingTypes() {
-        List<TrainingType> trainingTypes = trainingTypeService.findAllTrainingTypes();
-        return trainingTypes.stream().
-                map(trainingType -> new TrainingTypeResponse(trainingType.getId(),
-                        trainingType.getType().toString())).
-                toList();
-    }
+//    @Transactional
+//    public List<TrainingTypeResponse> findAllTrainingTypes() {
+//        List<TrainingType> trainingTypes = trainingTypeService.findAllTrainingTypes();
+//        return trainingTypes.stream().
+//                map(trainingType -> new TrainingTypeResponse(trainingType.getId(),
+//                        trainingType.getType().toString())).
+//                toList();
+//    }
 
 }

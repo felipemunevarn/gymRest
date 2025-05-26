@@ -1,5 +1,7 @@
 package com.epam.gym.service;
 
+import com.epam.gym.dto.TraineeTrainingResponse;
+import com.epam.gym.dto.TrainingTypeResponse;
 import com.epam.gym.entity.TrainingType;
 import com.epam.gym.entity.TrainingTypeEnum;
 import com.epam.gym.repository.TrainingTypeRepository;
@@ -24,8 +26,14 @@ public class TrainingTypeService {
     }
 
     @Transactional
-    public List<TrainingType> findAllTrainingTypes(){
-        return trainingTypeRepository.findAll();
+    public List<TrainingTypeResponse> findAllTrainingTypes(){
+        List<TrainingType> trainingTypes = trainingTypeRepository.findAll();
+        return trainingTypes.stream()
+                .map(trainingType -> new TrainingTypeResponse(
+                        trainingType.getId(),
+                        trainingType.getType().toString()
+                ))
+                .toList();
     }
 
     @Transactional

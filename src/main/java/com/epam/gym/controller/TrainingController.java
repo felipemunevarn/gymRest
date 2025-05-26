@@ -3,8 +3,11 @@ package com.epam.gym.controller;
 import com.epam.gym.dto.TraineeRegistrationRequest;
 import com.epam.gym.dto.TraineeRegistrationResponse;
 import com.epam.gym.dto.TrainingRegistrationRequest;
+import com.epam.gym.entity.Trainee;
+import com.epam.gym.entity.Trainer;
 import com.epam.gym.service.FacadeService;
 import com.epam.gym.service.TokenService;
+import com.epam.gym.service.TrainingService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,20 +23,24 @@ public class TrainingController {
 
     private final FacadeService facadeService;
     private final TokenService tokenService;
+    private final TrainingService trainingService;
 
     @Autowired
-    public TrainingController(FacadeService facadeService,
-            TokenService tokenService
+    public TrainingController(
+            FacadeService facadeService,
+            TokenService tokenService,
+            TrainingService trainingService
     ) {
         this.facadeService = facadeService;
         this.tokenService = tokenService;
+        this.trainingService = trainingService;
     }
 
     @PostMapping("/")
     public ResponseEntity<Void> registerTrainee(
             @Valid @RequestBody TrainingRegistrationRequest request
     ) {
-        facadeService.registerTraining(request);
+        trainingService.createTraining(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
