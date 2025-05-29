@@ -2,3 +2,4 @@ INSERT INTO training_types (type) VALUES ('CARDIO') ON CONFLICT (type) DO NOTHIN
 INSERT INTO training_types (type) VALUES ('STRENGTH') ON CONFLICT (type) DO NOTHING;
 INSERT INTO training_types (type) VALUES ('FLEXIBILITY') ON CONFLICT (type) DO NOTHING;
 INSERT INTO training_types (type) VALUES ('HIIT') ON CONFLICT (type) DO NOTHING;
+INSERT INTO training_types (type) VALUES ('BALANCE') ON CONFLICT (type) DO NOTHING;

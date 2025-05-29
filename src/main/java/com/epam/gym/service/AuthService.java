@@ -1,7 +1,6 @@
 package com.epam.gym.service;
 
 import com.epam.gym.entity.User;
-import com.epam.gym.repository.UserRepository;
 import jakarta.persistence.NoResultException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

@@ -1,27 +1,27 @@
 package com.epam.gym.service;
 
-import com.epam.gym.entity.Trainer;
-import com.epam.gym.entity.TrainingType;
-import com.epam.gym.entity.TrainingTypeEnum;
-import com.epam.gym.entity.User;
+import com.epam.gym.dto.*;
+import com.epam.gym.entity.*;
 import com.epam.gym.exception.TraineeCreationException;
+import com.epam.gym.mapper.TraineeMapper;
+import com.epam.gym.mapper.TrainerMapper;
 import com.epam.gym.repository.TrainerRepository;
 import com.epam.gym.util.UsernamePasswordUtil;
 import jakarta.persistence.NoResultException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class TrainerServiceTest {
 
     @Mock
@@ -30,133 +30,484 @@ class TrainerServiceTest {
     @Mock
     private UsernamePasswordUtil usernamePasswordUtil;
 
+    @Mock
+    private TrainerMapper trainerMapper;
+
+    @Mock
+    private TraineeMapper traineeMapper;
+
     @InjectMocks
     private TrainerService trainerService;
 
+    private User testUser;
+    private Trainer testTrainer;
+    private TrainingType testTrainingType;
+    private TrainerRegistrationRequest registrationRequest;
+    private TrainerUpdateRequest updateRequest;
+    private TrainerRegistrationResponse registrationResponse;
+    private TrainerProfileResponse profileResponse;
+
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        testUser = new User.Builder()
+                .firstName("John")
+                .lastName("Trainer")
+                .username("john.trainer")
+                .password("password123")
+                .isActive(true)
+                .build();
+
+        testTrainingType = new TrainingType(TrainingTypeEnum.FLEXIBILITY);
+
+        testTrainer = new Trainer.Builder()
+                .id(1L)
+                .user(testUser)
+                .trainingType(testTrainingType)
+                .trainees(new HashSet<>())
+                .build();
+
+        registrationRequest = new TrainerRegistrationRequest(
+                "John",
+                "Trainer",
+                "FLEXIBILITY"
+        );
+
+        updateRequest = new TrainerUpdateRequest(
+                "john.trainer",
+                "Jane",
+                "Smith",
+                "STRENGTH",
+                false
+        );
+
+        registrationResponse = new TrainerRegistrationResponse("john.trainer", "password123");
+        profileResponse = new TrainerProfileResponse(
+                "Jane",
+                "Smith",
+                new TrainingType(TrainingTypeEnum.STRENGTH),
+                false,
+                Collections.emptyList()
+        );
     }
 
     @Test
-    void testCreateTrainer_shouldCreateAndReturnTrainer() {
-        String firstName = "John";
-        String lastName = "Doe";
-        TrainingType trainingType = new TrainingType(TrainingTypeEnum.CARDIO);
-
-        when(usernamePasswordUtil.generateUsername(firstName, lastName)).thenReturn("john.doe");
+    void createTrainer_Success() {
+        // Arrange
+        when(usernamePasswordUtil.generateUsername("John", "Trainer")).thenReturn("john.trainer");
         when(usernamePasswordUtil.generatePassword()).thenReturn("password123");
+        when(trainerRepository.save(any(Trainer.class))).thenReturn(testTrainer);
+        when(trainerMapper.toTrainerRegistrationResponse(any(Trainer.class))).thenReturn(registrationResponse);
 
-        ArgumentCaptor<Trainer> captor = ArgumentCaptor.forClass(Trainer.class);
-        when(trainerRepository.save(any(Trainer.class))).thenAnswer(i -> i.getArgument(0));
+        // Act
+        TrainerRegistrationResponse result = trainerService.createTrainer(registrationRequest);
 
-        Trainer result = trainerService.createTrainer(firstName, lastName, trainingType);
-
-        verify(trainerRepository).save(captor.capture());
-        assertEquals("john.doe", captor.getValue().getUser().getUsername());
-        assertEquals(trainingType, captor.getValue().getTrainingType());
-        assertEquals(result, captor.getValue());
+        // Assert
+        assertNotNull(result);
+        assertEquals("john.trainer", result.username());
+        assertEquals("password123", result.password());
+        verify(trainerRepository).save(any(Trainer.class));
+        verify(trainerMapper).toTrainerRegistrationResponse(any(Trainer.class));
     }
 
     @Test
-    void testCreateTrainer_shouldThrowExceptionWhenFails() {
-        when(usernamePasswordUtil.generateUsername(any(), any())).thenReturn("error.user");
-        when(usernamePasswordUtil.generatePassword()).thenReturn("pass");
-        when(trainerRepository.save(any(Trainer.class))).thenThrow(new RuntimeException("DB Error"));
+    void createTrainer_ThrowsTraineeCreationException() {
+        // Arrange
+        when(usernamePasswordUtil.generateUsername("John", "Trainer")).thenReturn("john.trainer");
+        when(usernamePasswordUtil.generatePassword()).thenReturn("password123");
+        when(trainerRepository.save(any(Trainer.class))).thenThrow(new RuntimeException("Database error"));
 
-        assertThrows(TraineeCreationException.class, () ->
-                trainerService.createTrainer("err",
-                        "user",
-                        new TrainingType(TrainingTypeEnum.STRENGTH)));
+        // Act & Assert
+        TraineeCreationException exception = assertThrows(
+                TraineeCreationException.class,
+                () -> trainerService.createTrainer(registrationRequest)
+        );
+
+        assertEquals("Failed to create trainer", exception.getMessage());
+        verify(trainerRepository).save(any(Trainer.class));
+        verify(trainerMapper, never()).toTrainerRegistrationResponse(any(Trainer.class));
     }
 
     @Test
-    void testFindTrainerByUsername_shouldReturnTrainer() {
-        String username = "trainer1";
-        Trainer trainer = Trainer.builder().user(User.builder().username(username).build()).build();
-        when(trainerRepository.findByUserUsername(username)).thenReturn(Optional.of(trainer));
+    void findTrainerByUsername_Success() {
+        // Arrange
+        when(trainerRepository.findByUserUsername("john.trainer")).thenReturn(Optional.of(testTrainer));
+        when(trainerMapper.toTrainerProfileResponse(testTrainer)).thenReturn(profileResponse);
 
-        Trainer result = trainerService.findTrainerByUsername(username);
-        assertEquals(username, result.getUser().getUsername());
+        // Act
+        TrainerProfileResponse result = trainerService.findTrainerByUsername("john.trainer");
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(profileResponse, result);
+        verify(trainerRepository).findByUserUsername("john.trainer");
+        verify(trainerMapper).toTrainerProfileResponse(testTrainer);
     }
 
     @Test
-    void testFindTrainerByUsername_shouldThrowWhenNotFound() {
-        when(trainerRepository.findByUserUsername("ghost"))
-                .thenReturn(Optional.empty());
-        assertThrows(NoResultException.class, () -> trainerService.findTrainerByUsername("ghost"));
+    void findTrainerByUsername_ThrowsNoResultException() {
+        // Arrange
+        when(trainerRepository.findByUserUsername("nonexistent")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        NoResultException exception = assertThrows(
+                NoResultException.class,
+                () -> trainerService.findTrainerByUsername("nonexistent")
+        );
+
+        assertEquals("Trainer not found", exception.getMessage());
+        verify(trainerRepository).findByUserUsername("nonexistent");
+        verify(trainerMapper, never()).toTrainerProfileResponse(any(Trainer.class));
     }
 
     @Test
-    void testUpdateTrainer_shouldUpdateFields() {
-        String username = "trainer.update";
-        User user = User.builder().firstName("A").lastName("B").isActive(true).username(username).build();
-        TrainingType oldType = new TrainingType(TrainingTypeEnum.STRENGTH);
-        TrainingType newType = new TrainingType(TrainingTypeEnum.CARDIO);
-        Trainer existing = Trainer.builder().user(user).trainingType(oldType).build();
+    void updateTrainer_WithAllFieldsChanged_Success() {
+        // Arrange
+        when(trainerRepository.findByUserUsername("john.trainer")).thenReturn(Optional.of(testTrainer));
 
-        when(trainerRepository.findByUserUsername(username)).thenReturn(Optional.of(existing));
+        Trainer updatedTrainer = createUpdatedTrainer();
+        when(trainerRepository.save(any(Trainer.class))).thenReturn(updatedTrainer);
+        when(trainerMapper.toTrainerProfileResponse(updatedTrainer)).thenReturn(profileResponse);
 
-        trainerService.updateTrainer(username, "C", "D", newType, false);
+        // Act
+        TrainerProfileResponse result = trainerService.updateTrainer(updateRequest);
 
+        // Assert
+        assertNotNull(result);
+        assertEquals(profileResponse, result);
+        verify(trainerRepository).findByUserUsername("john.trainer");
+        verify(trainerRepository).save(any(Trainer.class));
+        verify(trainerMapper).toTrainerProfileResponse(updatedTrainer);
+    }
+
+    @Test
+    void updateTrainer_WithOnlyFirstNameChanged_Success() {
+        // Arrange
+        TrainerUpdateRequest partialUpdateRequest = new TrainerUpdateRequest(
+                "john.trainer",
+                "Jane", // Only first name changed
+                "Trainer",
+                null,
+                true
+        );
+
+        when(trainerRepository.findByUserUsername("john.trainer")).thenReturn(Optional.of(testTrainer));
+
+        Trainer updatedTrainer = createUpdatedTrainer();
+        when(trainerRepository.save(any(Trainer.class))).thenReturn(updatedTrainer);
+        when(trainerMapper.toTrainerProfileResponse(updatedTrainer)).thenReturn(profileResponse);
+
+        // Act
+        TrainerProfileResponse result = trainerService.updateTrainer(partialUpdateRequest);
+
+        // Assert
+        assertNotNull(result);
         verify(trainerRepository).save(any(Trainer.class));
     }
 
     @Test
-    void testUpdateTrainer_shouldSkipWhenNoChange() {
-        String username = "no.change";
-        User user = User.builder().firstName("A").lastName("B").isActive(true).username(username).build();
-        TrainingType type = new TrainingType(TrainingTypeEnum.CARDIO);
-        Trainer existing = Trainer.builder().user(user).trainingType(type).build();
+    void updateTrainer_WithOnlyLastNameChanged_Success() {
+        // Arrange
+        TrainerUpdateRequest partialUpdateRequest = new TrainerUpdateRequest(
+                "john.trainer",
+                "John",
+                "Smith", // Only last name changed
+                null,
+                true
+        );
 
-        when(trainerRepository.findByUserUsername(username)).thenReturn(Optional.of(existing));
+        when(trainerRepository.findByUserUsername("john.trainer")).thenReturn(Optional.of(testTrainer));
 
-        trainerService.updateTrainer(username, "A", "B", type, true);
-        verify(trainerRepository, never()).save(any());
+        Trainer updatedTrainer = createUpdatedTrainer();
+        when(trainerRepository.save(any(Trainer.class))).thenReturn(updatedTrainer);
+        when(trainerMapper.toTrainerProfileResponse(updatedTrainer)).thenReturn(profileResponse);
+
+        // Act
+        TrainerProfileResponse result = trainerService.updateTrainer(partialUpdateRequest);
+
+        // Assert
+        assertNotNull(result);
+        verify(trainerRepository).save(any(Trainer.class));
     }
 
     @Test
-    void testGetAvailableTrainersForTrainee_shouldReturnList() {
-        String username = "trainer1";
-        Trainer trainer = Trainer.builder().user(User.builder().username(username).build()).build();
-        when(trainerRepository.findActiveTrainersNotAssignedToTrainee("trainee1"))
-                .thenReturn(List.of(trainer));
-        List<Trainer> result = trainerService.getAvailableTrainersForTrainee("trainee1");
-        assertEquals(1, result.size());
+    void updateTrainer_WithOnlyActiveStatusChanged_Success() {
+        // Arrange
+        TrainerUpdateRequest partialUpdateRequest = new TrainerUpdateRequest(
+                "john.trainer",
+                "John",
+                "Trainer",
+                null,
+                false // Only active status changed
+        );
+
+        when(trainerRepository.findByUserUsername("john.trainer")).thenReturn(Optional.of(testTrainer));
+
+        Trainer updatedTrainer = createUpdatedTrainer();
+        when(trainerRepository.save(any(Trainer.class))).thenReturn(updatedTrainer);
+        when(trainerMapper.toTrainerProfileResponse(updatedTrainer)).thenReturn(profileResponse);
+
+        // Act
+        TrainerProfileResponse result = trainerService.updateTrainer(partialUpdateRequest);
+
+        // Assert
+        assertNotNull(result);
+        verify(trainerRepository).save(any(Trainer.class));
     }
 
     @Test
-    void testGetTrainersByUsernames_shouldReturnList() {
-        String username = "trainer1";
-        Trainer trainer = Trainer.builder().user(User.builder().username(username).build()).build();
-        when(trainerRepository.findAllByUserUsernameIn(List.of("t1", "t2")))
-                .thenReturn(List.of(trainer, trainer));
-        List<Trainer> result = trainerService.getTrainersByUsernames(List.of("t1", "t2"));
+    void updateTrainer_WithSpecializationOnly_Success() {
+        // Arrange
+        TrainerUpdateRequest partialUpdateRequest = new TrainerUpdateRequest(
+                "john.trainer",
+                "John",
+                "Trainer",
+                "STRENGTH", // Only specialization changed
+                true
+        );
+
+        when(trainerRepository.findByUserUsername("john.trainer")).thenReturn(Optional.of(testTrainer));
+
+        Trainer updatedTrainer = createUpdatedTrainer();
+        when(trainerRepository.save(any(Trainer.class))).thenReturn(updatedTrainer);
+        when(trainerMapper.toTrainerProfileResponse(updatedTrainer)).thenReturn(profileResponse);
+
+        // Act
+        TrainerProfileResponse result = trainerService.updateTrainer(partialUpdateRequest);
+
+        // Assert
+        assertNotNull(result);
+        verify(trainerRepository).save(any(Trainer.class));
+    }
+
+    @Test
+    void updateTrainer_NoChanges_DoesNotSave() {
+        // Arrange
+        TrainerUpdateRequest noChangeRequest = new TrainerUpdateRequest(
+                "john.trainer",
+                "John",    // Same as original
+                "Trainer", // Same as original
+                null,      // No specialization change
+                true       // Same as original
+        );
+
+        when(trainerRepository.findByUserUsername("john.trainer")).thenReturn(Optional.of(testTrainer));
+        when(trainerMapper.toTrainerProfileResponse(testTrainer)).thenReturn(profileResponse);
+
+        // Act
+        TrainerProfileResponse result = trainerService.updateTrainer(noChangeRequest);
+
+        // Assert
+        assertNotNull(result);
+        verify(trainerRepository).findByUserUsername("john.trainer");
+        verify(trainerRepository, never()).save(any(Trainer.class)); // Should not save if no changes
+        verify(trainerMapper).toTrainerProfileResponse(testTrainer);
+    }
+
+    @Test
+    void updateTrainer_TrainerNotFound_ThrowsNoResultException() {
+        // Arrange
+        when(trainerRepository.findByUserUsername("nonexistent")).thenReturn(Optional.empty());
+
+        TrainerUpdateRequest requestWithNonexistentUser = new TrainerUpdateRequest(
+                "nonexistent",
+                "Jane",
+                "Smith",
+                "STRENGTH",
+                false
+        );
+
+        // Act & Assert
+        NoResultException exception = assertThrows(
+                NoResultException.class,
+                () -> trainerService.updateTrainer(requestWithNonexistentUser)
+        );
+
+        assertEquals("Trainer not found", exception.getMessage());
+        verify(trainerRepository).findByUserUsername("nonexistent");
+        verify(trainerRepository, never()).save(any(Trainer.class));
+    }
+
+    @Test
+    void getAvailableTrainersForTrainee_Success() {
+        // Arrange
+        String traineeUsername = "trainee.user";
+        List<Trainer> trainerList = Arrays.asList(testTrainer, createSecondTrainer());
+        List<TrainerDto> expectedTrainerDtos = Arrays.asList(
+                new TrainerDto("john.trainer", "John", "Trainer", "FITNESS"),
+                new TrainerDto("jane.trainer", "Jane", "Trainer", "STRENGTH")
+        );
+
+        when(trainerRepository.findActiveTrainersNotAssignedToTrainee(traineeUsername)).thenReturn(trainerList);
+        when(traineeMapper.mapTrainersToTrainerDtoList(any(Set.class))).thenReturn(expectedTrainerDtos);
+
+        // Act
+        List<TrainerDto> result = trainerService.getAvailableTrainersForTrainee(traineeUsername);
+
+        // Assert
+        assertNotNull(result);
         assertEquals(2, result.size());
+        assertEquals(expectedTrainerDtos, result);
+        verify(trainerRepository).findActiveTrainersNotAssignedToTrainee(traineeUsername);
+        verify(traineeMapper).mapTrainersToTrainerDtoList(any(Set.class));
     }
 
     @Test
-    void testChangeActiveStatus_shouldUpdate() {
-        String username = "trainer.active";
-        User user = User.builder().username(username).isActive(true).build();
-        Trainer trainer = Trainer.builder().user(user).build();
+    void getAvailableTrainersForTrainee_EmptyList_Success() {
+        // Arrange
+        String traineeUsername = "trainee.user";
+        List<Trainer> emptyTrainerList = Collections.emptyList();
+        List<TrainerDto> emptyTrainerDtos = Collections.emptyList();
 
-        when(trainerRepository.findByUserUsername(username)).thenReturn(Optional.of(trainer));
+        when(trainerRepository.findActiveTrainersNotAssignedToTrainee(traineeUsername)).thenReturn(emptyTrainerList);
+        when(traineeMapper.mapTrainersToTrainerDtoList(any(Set.class))).thenReturn(emptyTrainerDtos);
 
-        trainerService.changeActiveStatus(username, false);
+        // Act
+        List<TrainerDto> result = trainerService.getAvailableTrainersForTrainee(traineeUsername);
 
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(trainerRepository).findActiveTrainersNotAssignedToTrainee(traineeUsername);
+        verify(traineeMapper).mapTrainersToTrainerDtoList(any(Set.class));
+    }
+
+    @Test
+    void getTrainersByUsernames_Success() {
+        // Arrange
+        List<String> usernames = Arrays.asList("john.trainer", "jane.trainer");
+        List<Trainer> expectedTrainers = Arrays.asList(testTrainer, createSecondTrainer());
+
+        when(trainerRepository.findAllByUserUsernameIn(usernames)).thenReturn(expectedTrainers);
+
+        // Act
+        List<Trainer> result = trainerService.getTrainersByUsernames(usernames);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(expectedTrainers, result);
+        verify(trainerRepository).findAllByUserUsernameIn(usernames);
+    }
+
+    @Test
+    void getTrainersByUsernames_EmptyList_Success() {
+        // Arrange
+        List<String> emptyUsernames = Collections.emptyList();
+        List<Trainer> emptyTrainers = Collections.emptyList();
+
+        when(trainerRepository.findAllByUserUsernameIn(emptyUsernames)).thenReturn(emptyTrainers);
+
+        // Act
+        List<Trainer> result = trainerService.getTrainersByUsernames(emptyUsernames);
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(trainerRepository).findAllByUserUsernameIn(emptyUsernames);
+    }
+
+    @Test
+    void changeActiveStatus_FromActiveToInactive_Success() {
+        // Arrange
+        when(trainerRepository.findByUserUsername("john.trainer")).thenReturn(Optional.of(testTrainer));
+
+        User updatedUser = testUser.toBuilder().isActive(false).build();
+        Trainer updatedTrainer = testTrainer.toBuilder().user(updatedUser).build();
+        when(trainerRepository.save(any(Trainer.class))).thenReturn(updatedTrainer);
+
+        // Act
+        trainerService.changeActiveStatus("john.trainer", false);
+
+        // Assert
+        verify(trainerRepository).findByUserUsername("john.trainer");
         verify(trainerRepository).save(any(Trainer.class));
     }
 
     @Test
-    void testChangeActiveStatus_shouldSkipUpdate() {
-        String username = "trainer.same";
-        User user = User.builder().username(username).isActive(true).build();
-        Trainer trainer = Trainer.builder().user(user).build();
+    void changeActiveStatus_FromInactiveToActive_Success() {
+        // Arrange
+        User inactiveUser = testUser.toBuilder().isActive(false).build();
+        Trainer inactiveTrainer = testTrainer.toBuilder().user(inactiveUser).build();
 
-        when(trainerRepository.findByUserUsername(username)).thenReturn(Optional.of(trainer));
+        when(trainerRepository.findByUserUsername("john.trainer")).thenReturn(Optional.of(inactiveTrainer));
 
-        trainerService.changeActiveStatus(username, true);
-        verify(trainerRepository, never()).save(any());
+        User activatedUser = inactiveUser.toBuilder().isActive(true).build();
+        Trainer activatedTrainer = inactiveTrainer.toBuilder().user(activatedUser).build();
+        when(trainerRepository.save(any(Trainer.class))).thenReturn(activatedTrainer);
+
+        // Act
+        trainerService.changeActiveStatus("john.trainer", true);
+
+        // Assert
+        verify(trainerRepository).findByUserUsername("john.trainer");
+        verify(trainerRepository).save(any(Trainer.class));
+    }
+
+    @Test
+    void changeActiveStatus_NoChange_DoesNotSave() {
+        // Arrange
+        when(trainerRepository.findByUserUsername("john.trainer")).thenReturn(Optional.of(testTrainer));
+
+        // Act - trying to set active status to the same value (true)
+        trainerService.changeActiveStatus("john.trainer", true);
+
+        // Assert
+        verify(trainerRepository).findByUserUsername("john.trainer");
+        verify(trainerRepository, never()).save(any(Trainer.class)); // Should not save if no change
+    }
+
+    @Test
+    void changeActiveStatus_TrainerNotFound_ThrowsNoResultException() {
+        // Arrange
+        when(trainerRepository.findByUserUsername("nonexistent")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        NoResultException exception = assertThrows(
+                NoResultException.class,
+                () -> trainerService.changeActiveStatus("nonexistent", false)
+        );
+
+        assertEquals("Trainer not found", exception.getMessage());
+        verify(trainerRepository).findByUserUsername("nonexistent");
+        verify(trainerRepository, never()).save(any(Trainer.class));
+    }
+
+    // Helper methods
+    private Trainer createUpdatedTrainer() {
+        User updatedUser = new User.Builder()
+                .firstName("Jane")
+                .lastName("Smith")
+                .username("john.trainer")
+                .password("password123")
+                .isActive(false)
+                .build();
+
+        TrainingType yogaType = new TrainingType(TrainingTypeEnum.STRENGTH);
+
+        return new Trainer.Builder()
+                .id(1L)
+                .user(updatedUser)
+                .trainingType(yogaType)
+                .trainees(new HashSet<>())
+                .build();
+    }
+
+    private Trainer createSecondTrainer() {
+        User secondUser = new User.Builder()
+                .firstName("Jane")
+                .lastName("Trainer")
+                .username("jane.trainer")
+                .password("password456")
+                .isActive(true)
+                .build();
+
+        TrainingType yogaType = new TrainingType(TrainingTypeEnum.STRENGTH);
+
+        return new Trainer.Builder()
+                .id(2L)
+                .user(secondUser)
+                .trainingType(yogaType)
+                .trainees(new HashSet<>())
+                .build();
     }
 }

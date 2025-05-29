@@ -78,7 +78,7 @@ class AuthControllerTest {
     @Test
     void validateToken_ValidToken_ShouldReturnOk() {
         String token = "validToken";
-        when(tokenService.isValidToken(token)).thenReturn(true);
+        when(tokenService.isValidToken("user",token)).thenReturn(true);
         when(tokenService.getUsername(token)).thenReturn("user");
 
         ResponseEntity<TokenValidationResponse> response = authController.validateToken(token);
@@ -91,7 +91,7 @@ class AuthControllerTest {
     @Test
     void validateToken_InvalidToken_ShouldReturnUnauthorized() {
         String token = "invalidToken";
-        when(tokenService.isValidToken(token)).thenReturn(false);
+        when(tokenService.isValidToken("user", token)).thenReturn(false);
 
         ResponseEntity<TokenValidationResponse> response = authController.validateToken(token);
 

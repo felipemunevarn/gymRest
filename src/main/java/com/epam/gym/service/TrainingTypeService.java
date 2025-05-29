@@ -1,6 +1,5 @@
 package com.epam.gym.service;
 
-import com.epam.gym.dto.TraineeTrainingResponse;
 import com.epam.gym.dto.TrainingTypeResponse;
 import com.epam.gym.entity.TrainingType;
 import com.epam.gym.entity.TrainingTypeEnum;

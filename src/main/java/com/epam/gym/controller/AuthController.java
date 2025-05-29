@@ -88,20 +88,15 @@ public class AuthController {
 //     * @return ResponseEntity with TokenValidationResponse and HTTP status OK if valid,
 //     * or HTTP status UNAUTHORIZED if invalid.
 //     */
-//    @GetMapping("/validate")
-//    public ResponseEntity<TokenValidationResponse> validateToken(@RequestHeader("X-Auth-Token") String token) {
-//        if (tokenService.isValidToken(token)) {
-//            // Assuming getUsername is available in TokenService to retrieve the username from the token
-//            String username = tokenService.getUsername(token);
-//            // Create a success response DTO
-//            TokenValidationResponse response = new TokenValidationResponse(true, username);
-//            // Return OK status with the structured response
-//            return ResponseEntity.ok(response);
-//        } else {
-//            // Create a failure response DTO
-//            TokenValidationResponse response = new TokenValidationResponse(false, null);
-//            // Return UNAUTHORIZED status for invalid token
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response); // Return UNAUTHORIZED for invalid
-//        }
-//    }
+    @GetMapping("/validate")
+    public ResponseEntity<TokenValidationResponse> validateToken(@RequestHeader("X-Auth-Token") String token) {
+        if (tokenService.isValidToken(tokenService.getUsername(token),token)) {
+            String username = tokenService.getUsername(token);
+            TokenValidationResponse response = new TokenValidationResponse(true, username);
+            return ResponseEntity.ok(response);
+        } else {
+            TokenValidationResponse response = new TokenValidationResponse(false, null);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response); // Return UNAUTHORIZED for invalid
+        }
+    }
 }
