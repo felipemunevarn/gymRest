@@ -10,6 +10,7 @@ import com.epam.gym.repository.TraineeRepository;
 import com.epam.gym.repository.TrainerRepository;
 import com.epam.gym.util.UsernamePasswordUtil;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.NoResultException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,7 @@ class TraineeServiceTest {
     private TraineeMapper traineeMapper;
 
     @Mock
-    private MeterRegistry meterRegistry;
+    private SimpleMeterRegistry meterRegistry;
 
     @InjectMocks
     private TraineeService traineeService;

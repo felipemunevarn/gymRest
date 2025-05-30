@@ -16,23 +16,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 
 @Service
 public class TraineeService {
-
-    private final Counter traineeCounter;
-//    private final AtomicInteger cartSize; // Gauge needs a thread-safe object to track
-    private final Timer orderProcessingTimer;
 
     private static final Logger log = LoggerFactory.getLogger(TraineeService.class);
     private final TraineeRepository traineeRepository;
@@ -40,49 +28,17 @@ public class TraineeService {
     private final UsernamePasswordUtil usernamePasswordUtil;
     private final TraineeMapper traineeMapper;
 
-    // 1. CREATE A COUNTER
-    // A counter is for values that only increase.
-    // Good for: total requests, total items sold, total errors.
-
-    // 2. CREATE A GAUGE
-    // A gauge tracks a value that can go up or down.
-    // Good for: number of active users, queue size, CPU temperature.
-    // We use an AtomicInteger because gauges are weakly referenced and we need a
-    // long-lived, thread-safe object to hold the value.
-
-    // 3. CREATE A TIMER
-    // A timer measures both the count and duration of events.
-    // Micrometer will automatically provide count, total time, and max time.
-
-
     @Autowired
     public TraineeService(
             TraineeRepository traineeRepository,
             TrainerRepository trainerRepository,
             UsernamePasswordUtil usernamePasswordUtil,
-            TraineeMapper traineeMapper,
-            MeterRegistry meterRegistry
+            TraineeMapper traineeMapper
     ) {
         this.traineeRepository = traineeRepository;
         this.trainerRepository = trainerRepository;
         this.usernamePasswordUtil = usernamePasswordUtil;
         this.traineeMapper = traineeMapper;
-
-        this.traineeCounter = Counter.builder("trainee.registered.total")
-            .description("Total number of trainees registered.")
-                .tag("type", "online") // Tags add dimensions for filtering/grouping
-                .register(meterRegistry);
-
-//        this.cartSize = new AtomicInteger(0);
-//        Gauge.builder("orders.cart.size", (Supplier<Number>) cartSize)
-//            .description("Number of items currently in the cart.")
-//                .register(meterRegistry);
-
-        this.orderProcessingTimer = Timer.builder("orders.processing.time")
-            .description("Time taken to process an order.")
-                .publishPercentiles(0.5, 0.95, 0.99) // Publish 50th, 95th, 99th percentiles
-                .sla(Duration.ofMillis(100)) // Set a Service Level Agreement threshold
-            .register(meterRegistry);
     }
 
     @Transactional
@@ -113,7 +69,6 @@ public class TraineeService {
         try {
             traineeRepository.save(trainee);
             log.info("Trainee {} created successfully with ID: {}", user.getUsername(), trainee.getId());
-            traineeCounter.increment();
             return  traineeMapper.toTraineeRegistrationResponse(trainee);
         } catch (Exception e) {
             log.error("Failed to save trainee: {}", e.getMessage(), e);
