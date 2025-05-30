@@ -1,9 +1,6 @@
 package com.epam.gym.controller;
 
-import com.epam.gym.dto.TraineeRegistrationRequest;
-import com.epam.gym.dto.TraineeRegistrationResponse;
 import com.epam.gym.dto.TrainingRegistrationRequest;
-import com.epam.gym.service.FacadeService;
 import com.epam.gym.service.TokenService;
 import com.epam.gym.service.TrainingService;
 import jakarta.validation.Valid;
