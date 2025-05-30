@@ -6,6 +6,7 @@ import com.epam.gym.mapper.TrainingMapper;
 import com.epam.gym.repository.TraineeRepository;
 import com.epam.gym.repository.TrainerRepository;
 import com.epam.gym.repository.TrainingRepository;
+import com.epam.gym.repository.TrainingTypeRepository;
 import jakarta.persistence.NoResultException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -37,6 +38,9 @@ class TrainingServiceTest {
 
     @Mock
     private TrainingRepository trainingRepository;
+
+    @Mock
+    private TrainingTypeRepository trainingTypeRepository;
 
     @Mock
     private TrainingMapper trainingMapper;
@@ -206,6 +210,11 @@ class TrainingServiceTest {
                 "CARDIO"
         );
 
+        // Mock the TrainingType lookup
+        TrainingType cardioType = new TrainingType(TrainingTypeEnum.CARDIO);
+        when(trainingTypeRepository.findByType(TrainingTypeEnum.CARDIO))
+                .thenReturn(Optional.of(cardioType));
+
         List<Training> mockTrainings = Arrays.asList(mockTraining);
         List<TraineeTrainingResponse> expectedResponse = Arrays.asList(
                 new TraineeTrainingResponse("Morning Workout", LocalDate.now().toString(), "CARDIO", 60, "Jane Smith")
@@ -216,7 +225,7 @@ class TrainingServiceTest {
                 eq(request.from()),
                 eq(request.to()),
                 eq(request.trainerName()),
-                any(TrainingType.class)
+                eq(cardioType)  // Use the specific TrainingType object
         )).thenReturn(mockTrainings);
         when(trainingMapper.mapTrainingsToTraineeDtoResponseList(mockTrainings)).thenReturn(expectedResponse);
 
@@ -232,7 +241,7 @@ class TrainingServiceTest {
                 eq(request.from()),
                 eq(request.to()),
                 eq(request.trainerName()),
-                any(TrainingType.class)
+                eq(cardioType)  // Use the specific TrainingType object
         );
         verify(trainingMapper).mapTrainingsToTraineeDtoResponseList(mockTrainings);
     }
@@ -252,13 +261,18 @@ class TrainingServiceTest {
         List<Training> emptyTrainings = Collections.emptyList();
         List<TraineeTrainingResponse> emptyResponse = Collections.emptyList();
 
+        TrainingType cardioType = new TrainingType(TrainingTypeEnum.CARDIO);
+        when(trainingTypeRepository.findByType(TrainingTypeEnum.CARDIO))
+                .thenReturn(Optional.of(cardioType));
+
         when(trainingRepository.findTraineeTrainingsByCriteria(
                 eq(username),
                 eq(request.from()),
                 eq(request.to()),
                 eq(request.trainerName()),
-                any(TrainingType.class)
+                eq(cardioType) // Use the actual training type object instead of any()
         )).thenReturn(emptyTrainings);
+
         when(trainingMapper.mapTrainingsToTraineeDtoResponseList(emptyTrainings)).thenReturn(emptyResponse);
 
         // When
@@ -267,12 +281,15 @@ class TrainingServiceTest {
         // Then
         assertNotNull(result);
         assertTrue(result.isEmpty());
+
+        verify(trainingTypeRepository).findByType(TrainingTypeEnum.CARDIO);
+
         verify(trainingRepository).findTraineeTrainingsByCriteria(
                 eq(username),
                 eq(request.from()),
                 eq(request.to()),
                 eq(request.trainerName()),
-                any(TrainingType.class)
+                eq(cardioType)
         );
         verify(trainingMapper).mapTrainingsToTraineeDtoResponseList(emptyTrainings);
     }
@@ -384,6 +401,10 @@ class TrainingServiceTest {
         TraineeTrainingRequest request = new TraineeTrainingRequest(
                 null, null, null, "CARDIO"
         );
+
+        TrainingType cardioType = new TrainingType(TrainingTypeEnum.CARDIO);
+        when(trainingTypeRepository.findByType(TrainingTypeEnum.CARDIO))
+                .thenReturn(Optional.of(cardioType));
 
         List<Training> mockTrainings = Arrays.asList(mockTraining);
         List<TraineeTrainingResponse> expectedResponse = Arrays.asList(

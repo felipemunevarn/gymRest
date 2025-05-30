@@ -8,7 +8,6 @@ import com.epam.gym.mapper.TrainerMapper;
 import com.epam.gym.repository.TrainerRepository;
 import com.epam.gym.repository.TrainingTypeRepository;
 import com.epam.gym.util.UsernamePasswordUtil;
-import jakarta.annotation.Nullable;
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
@@ -19,7 +18,6 @@ import org.springframework.stereotype.Service;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class TrainerService {
@@ -68,7 +66,7 @@ public class TrainerService {
         TrainingType type = trainingTypeRepository.findByType(TrainingTypeEnum.valueOf(request.specialization()))
                 .orElseThrow(() -> {
                     log.error("Training Type not found with name: {}", request.specialization());
-                    return new NoResultException("Type not found");
+                    return new TraineeCreationException("Type not found");
                 });
 
         Trainer trainer = new Trainer.Builder()

@@ -6,6 +6,7 @@ import com.epam.gym.exception.TraineeCreationException;
 import com.epam.gym.mapper.TraineeMapper;
 import com.epam.gym.mapper.TrainerMapper;
 import com.epam.gym.repository.TrainerRepository;
+import com.epam.gym.repository.TrainingTypeRepository;
 import com.epam.gym.util.UsernamePasswordUtil;
 import jakarta.persistence.NoResultException;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +27,9 @@ class TrainerServiceTest {
 
     @Mock
     private TrainerRepository trainerRepository;
+
+    @Mock
+    private TrainingTypeRepository trainingTypeRepository; // Added missing mock
 
     @Mock
     private UsernamePasswordUtil usernamePasswordUtil;
@@ -95,6 +99,8 @@ class TrainerServiceTest {
         // Arrange
         when(usernamePasswordUtil.generateUsername("John", "Trainer")).thenReturn("john.trainer");
         when(usernamePasswordUtil.generatePassword()).thenReturn("password123");
+        when(trainingTypeRepository.findByType(TrainingTypeEnum.FLEXIBILITY))
+                .thenReturn(Optional.of(testTrainingType)); // Added mock for training type
         when(trainerRepository.save(any(Trainer.class))).thenReturn(testTrainer);
         when(trainerMapper.toTrainerRegistrationResponse(any(Trainer.class))).thenReturn(registrationResponse);
 
@@ -105,6 +111,7 @@ class TrainerServiceTest {
         assertNotNull(result);
         assertEquals("john.trainer", result.username());
         assertEquals("password123", result.password());
+        verify(trainingTypeRepository).findByType(TrainingTypeEnum.FLEXIBILITY);
         verify(trainerRepository).save(any(Trainer.class));
         verify(trainerMapper).toTrainerRegistrationResponse(any(Trainer.class));
     }
@@ -114,6 +121,8 @@ class TrainerServiceTest {
         // Arrange
         when(usernamePasswordUtil.generateUsername("John", "Trainer")).thenReturn("john.trainer");
         when(usernamePasswordUtil.generatePassword()).thenReturn("password123");
+        when(trainingTypeRepository.findByType(TrainingTypeEnum.FLEXIBILITY))
+                .thenReturn(Optional.of(testTrainingType));
         when(trainerRepository.save(any(Trainer.class))).thenThrow(new RuntimeException("Database error"));
 
         // Act & Assert
@@ -163,6 +172,8 @@ class TrainerServiceTest {
     void updateTrainer_WithAllFieldsChanged_Success() {
         // Arrange
         when(trainerRepository.findByUserUsername("john.trainer")).thenReturn(Optional.of(testTrainer));
+        when(trainingTypeRepository.findByType(TrainingTypeEnum.STRENGTH))
+                .thenReturn(Optional.of(new TrainingType(TrainingTypeEnum.STRENGTH))); // Added mock
 
         Trainer updatedTrainer = createUpdatedTrainer();
         when(trainerRepository.save(any(Trainer.class))).thenReturn(updatedTrainer);
@@ -175,6 +186,7 @@ class TrainerServiceTest {
         assertNotNull(result);
         assertEquals(profileResponse, result);
         verify(trainerRepository).findByUserUsername("john.trainer");
+        verify(trainingTypeRepository).findByType(TrainingTypeEnum.STRENGTH);
         verify(trainerRepository).save(any(Trainer.class));
         verify(trainerMapper).toTrainerProfileResponse(updatedTrainer);
     }
@@ -266,6 +278,8 @@ class TrainerServiceTest {
         );
 
         when(trainerRepository.findByUserUsername("john.trainer")).thenReturn(Optional.of(testTrainer));
+        when(trainingTypeRepository.findByType(TrainingTypeEnum.STRENGTH))
+                .thenReturn(Optional.of(new TrainingType(TrainingTypeEnum.STRENGTH))); // Added mock
 
         Trainer updatedTrainer = createUpdatedTrainer();
         when(trainerRepository.save(any(Trainer.class))).thenReturn(updatedTrainer);
@@ -277,6 +291,7 @@ class TrainerServiceTest {
         // Assert
         assertNotNull(result);
         verify(trainerRepository).save(any(Trainer.class));
+        verify(trainingTypeRepository).findByType(TrainingTypeEnum.STRENGTH);
     }
 
     @Test
@@ -482,12 +497,12 @@ class TrainerServiceTest {
                 .isActive(false)
                 .build();
 
-        TrainingType yogaType = new TrainingType(TrainingTypeEnum.STRENGTH);
+        TrainingType strengthType = new TrainingType(TrainingTypeEnum.STRENGTH);
 
         return new Trainer.Builder()
                 .id(1L)
                 .user(updatedUser)
-                .trainingType(yogaType)
+                .trainingType(strengthType)
                 .trainees(new HashSet<>())
                 .build();
     }
@@ -501,12 +516,12 @@ class TrainerServiceTest {
                 .isActive(true)
                 .build();
 
-        TrainingType yogaType = new TrainingType(TrainingTypeEnum.STRENGTH);
+        TrainingType strengthType = new TrainingType(TrainingTypeEnum.STRENGTH);
 
         return new Trainer.Builder()
                 .id(2L)
                 .user(secondUser)
-                .trainingType(yogaType)
+                .trainingType(strengthType)
                 .trainees(new HashSet<>())
                 .build();
     }
