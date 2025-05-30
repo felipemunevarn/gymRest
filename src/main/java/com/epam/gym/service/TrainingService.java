@@ -6,6 +6,7 @@ import com.epam.gym.mapper.TrainingMapper;
 import com.epam.gym.repository.TraineeRepository;
 import com.epam.gym.repository.TrainerRepository;
 import com.epam.gym.repository.TrainingRepository;
+import com.epam.gym.repository.TrainingTypeRepository;
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
@@ -23,11 +24,13 @@ public class TrainingService {
     private final TraineeRepository traineeRepository;
     private final TrainerRepository trainerRepository;
     private final TrainingRepository trainingRepository;
+    private final TrainingTypeRepository trainingTypeRepository;
     private final TrainingMapper trainingMapper;
 
     @Autowired
     public TrainingService(
             TrainingRepository trainingRepository,
+            TrainingTypeRepository trainingTypeRepository,
             TrainingMapper trainingMapper,
             TraineeRepository traineeRepository,
             TrainerRepository trainerRepository
@@ -35,6 +38,7 @@ public class TrainingService {
         this.traineeRepository = traineeRepository;
         this.trainerRepository = trainerRepository;
         this.trainingRepository = trainingRepository;
+        this.trainingTypeRepository = trainingTypeRepository;
         this.trainingMapper = trainingMapper;
     }
 
@@ -77,7 +81,15 @@ public class TrainingService {
             String username,
             TraineeTrainingRequest request
     ) {
-        TrainingType specialization = new TrainingType(TrainingTypeEnum.valueOf(request.specialization()));
+        TrainingType specialization = null;
+        if (request.specialization()!=null) {
+            specialization = trainingTypeRepository
+                    .findByType(TrainingTypeEnum.valueOf(request.specialization()))
+                    .orElseThrow(() -> {
+                        log.error("Training Type not found with name: {}", request.specialization());
+                        return new NoResultException("Type not found");
+                    });
+        }
         List<Training> trainings = trainingRepository.findTraineeTrainingsByCriteria(
                 username,
                 request.from(),

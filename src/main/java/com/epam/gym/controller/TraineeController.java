@@ -139,7 +139,6 @@ public class TraineeController {
                 trainerName,
                 specialization);
 
-//        List<TraineeTrainingResponse> response = facadeService.findTraineeTrainings(username, request);
         List<TraineeTrainingResponse> response = trainingService.getTraineeTrainings(
                 username,
                 request

@@ -126,7 +126,12 @@ public class TrainerService {
             trainerBuilder.user(userUpdated);
 
         if (request.specialization() != null) {
-            trainerBuilder.trainingType(new TrainingType(TrainingTypeEnum.valueOf(request.specialization())));
+            TrainingType type = trainingTypeRepository.findByType(TrainingTypeEnum.valueOf(request.specialization()))
+                    .orElseThrow(() -> {
+                        log.error("Training Type not found with name: {}", request.specialization());
+                        return new NoResultException("Type not found");
+                    });
+            trainerBuilder.trainingType(type);
             updated = true;
         }
 
