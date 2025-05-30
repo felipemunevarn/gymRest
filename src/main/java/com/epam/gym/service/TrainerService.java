@@ -6,6 +6,7 @@ import com.epam.gym.exception.TraineeCreationException;
 import com.epam.gym.mapper.TraineeMapper;
 import com.epam.gym.mapper.TrainerMapper;
 import com.epam.gym.repository.TrainerRepository;
+import com.epam.gym.repository.TrainingTypeRepository;
 import com.epam.gym.util.UsernamePasswordUtil;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.NoResultException;
@@ -25,6 +26,7 @@ public class TrainerService {
 
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
     private final TrainerRepository trainerRepository;
+    private final TrainingTypeRepository trainingTypeRepository;
     private final UsernamePasswordUtil usernamePasswordUtil;
     private final TrainerMapper trainerMapper;
     private final TraineeMapper traineeMapper;
@@ -32,11 +34,13 @@ public class TrainerService {
     @Autowired
     public TrainerService(
             TrainerRepository trainerRepository,
+            TrainingTypeRepository trainingTypeRepository,
             UsernamePasswordUtil usernamePasswordUtil,
             TrainerMapper trainerMapper,
             TraineeMapper traineeMapper
     ) {
         this.trainerRepository = trainerRepository;
+        this.trainingTypeRepository = trainingTypeRepository;
         this.usernamePasswordUtil = usernamePasswordUtil;
         this.trainerMapper = trainerMapper;
         this.traineeMapper = traineeMapper;
@@ -61,8 +65,14 @@ public class TrainerService {
                 .isActive(true)
                 .build();
 
+        TrainingType type = trainingTypeRepository.findByType(TrainingTypeEnum.valueOf(request.specialization()))
+                .orElseThrow(() -> {
+                    log.error("Training Type not found with name: {}", request.specialization());
+                    return new NoResultException("Type not found");
+                });
+
         Trainer trainer = new Trainer.Builder()
-                .trainingType(new TrainingType(TrainingTypeEnum.valueOf(request.specialization())))
+                .trainingType(type)
                 .user(user)
                 .build();
 
