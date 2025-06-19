@@ -3,6 +3,7 @@ package com.epam.gym.service;
 import com.epam.gym.entity.User;
 import jakarta.persistence.NoResultException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -11,10 +12,15 @@ import java.util.Optional;
 public class AuthService {
 
     private final UserService userService;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public AuthService(UserService userService) {
+    public AuthService(
+            UserService userService,
+            PasswordEncoder passwordEncoder
+    ) {
         this.userService = userService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public boolean authenticate(String username, String password) {
@@ -22,7 +28,8 @@ public class AuthService {
         if (optUser.isEmpty()) {
             throw new NoResultException("User not found");
         }
-        return optUser.get().getPassword().equals(password);
+        return passwordEncoder.matches(password, optUser.get().getPassword());
+//        return optUser.get().getPassword().equals(password);
     }
 
     public void changePassword(String username, String oldPassword, String newPassword) {

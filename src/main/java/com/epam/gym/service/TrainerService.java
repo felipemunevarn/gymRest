@@ -61,6 +61,7 @@ public class TrainerService {
                 .username(username)
                 .password(password)
                 .isActive(true)
+                .role(User.Role.TRAINER)
                 .build();
 
         TrainingType type = trainingTypeRepository.findByType(TrainingTypeEnum.valueOf(request.specialization()))

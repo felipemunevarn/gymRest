@@ -25,12 +25,17 @@ public class User {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private Role role;
+
     public Long getId() { return id; }
     public String getFirstName() { return firstName; }
     public String getLastName() { return lastName; }
     public String getPassword() { return password; }
     public String getUsername() { return username; }
     public Boolean isActive() { return isActive; }
+    public Role getRole() { return role; }
 
     protected User() {}
 
@@ -41,6 +46,7 @@ public class User {
         this.username = builder.username;
         this.password = builder.password;
         this.isActive = builder.isActive;
+        this.role = builder.role;
     }
 
     public static Builder builder() {
@@ -58,6 +64,7 @@ public class User {
         private String username;
         private String password;
         private Boolean isActive;
+        private Role role;
 
         public Builder() {}
 
@@ -68,6 +75,7 @@ public class User {
             this.username = user.username;
             this.password = user.password;
             this.isActive = user.isActive;
+            this.role = user.role;
         }
 
         public Builder id(Long id) {
@@ -100,8 +108,45 @@ public class User {
             return this;
         }
 
+        public Builder role(Role role) {
+            this.role = role;
+            return this;
+        }
+
         public User build() {
             return new User(this);
+        }
+    }
+
+    public enum Role {
+        USER("ROLE_USER"),
+        ADMIN("ROLE_ADMIN"),
+        TRAINEE("ROLE_TRAINEE"),
+        TRAINER("ROLE_TRAINER");
+
+        private final String authority;
+
+        Role(String authority) {
+            this.authority = authority;
+        }
+
+        public String getAuthority() {
+            return authority;
+        }
+
+        // Helper method to get role without ROLE_ prefix
+        public String getRoleName() {
+            return authority.substring(5); // Remove "ROLE_" prefix
+        }
+
+        // Static method to get Role from authority string
+        public static Role fromAuthority(String authority) {
+            for (Role role : Role.values()) {
+                if (role.authority.equals(authority)) {
+                    return role;
+                }
+            }
+            throw new IllegalArgumentException("Unknown authority: " + authority);
         }
     }
 }

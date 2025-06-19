@@ -13,6 +13,7 @@ import jakarta.persistence.NoResultException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,18 +28,21 @@ public class TraineeService {
     private final TrainerRepository trainerRepository;
     private final UsernamePasswordUtil usernamePasswordUtil;
     private final TraineeMapper traineeMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
     public TraineeService(
             TraineeRepository traineeRepository,
             TrainerRepository trainerRepository,
             UsernamePasswordUtil usernamePasswordUtil,
-            TraineeMapper traineeMapper
+            TraineeMapper traineeMapper,
+            PasswordEncoder passwordEncoder
     ) {
         this.traineeRepository = traineeRepository;
         this.trainerRepository = trainerRepository;
         this.usernamePasswordUtil = usernamePasswordUtil;
         this.traineeMapper = traineeMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional
@@ -56,8 +60,9 @@ public class TraineeService {
                 .firstName(request.firstName())
                 .lastName(request.lastName())
                 .username(username)
-                .password(password)
+                .password(passwordEncoder.encode(password))
                 .isActive(true)
+                .role(User.Role.TRAINEE)
                 .build();
 
         Trainee trainee = new Trainee.Builder()

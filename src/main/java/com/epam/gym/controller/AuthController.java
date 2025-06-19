@@ -4,12 +4,18 @@ import com.epam.gym.dto.ChangePasswordRequest;
 import com.epam.gym.dto.LoginRequest;
 import com.epam.gym.dto.TokenValidationResponse;
 import com.epam.gym.exception.InvalidTokenException;
+import com.epam.gym.security.util.JwtUtil;
 import com.epam.gym.service.AuthService;
 import com.epam.gym.service.TokenService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,14 +23,20 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtUtil jwtUtil;
     private final TokenService tokenService;
+    private final AuthenticationManager authenticationManager;
 
     @Autowired
     public AuthController(AuthService authService,
-                          TokenService tokenService
+                          JwtUtil jwtUtil,
+                          TokenService tokenService,
+                          AuthenticationManager authenticationManager
     ) {
         this.authService = authService;
+        this.jwtUtil = jwtUtil;
         this.tokenService = tokenService;
+        this.authenticationManager = authenticationManager;
     }
 
     /**
@@ -38,13 +50,23 @@ public class AuthController {
     public ResponseEntity<String> login(
             @Valid @RequestBody LoginRequest request
     ) {
-        boolean isAuthenticated = authService.authenticate(request.username(),
-                request.password());
-        if (isAuthenticated) {
+        try {
+            // Use Spring Security's AuthenticationManager directly for authentication
+            Authentication auth = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.username(),
+                            request.password()
+                    ));
 
-            String token = tokenService.generateToken(request.username());
+            SecurityContextHolder.getContext().setAuthentication(auth);
+
+            // Generate JWT token
+            UserDetails userDetails = (UserDetails) auth.getPrincipal();
+            String token = jwtUtil.generateToken(userDetails.getUsername(), request.password());
             return ResponseEntity.ok(token);
-        } else {
+
+        } catch (Exception e) {
+            // Authentication failed
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
