@@ -29,7 +29,6 @@ public class AuthService {
             throw new NoResultException("User not found");
         }
         return passwordEncoder.matches(password, optUser.get().getPassword());
-//        return optUser.get().getPassword().equals(password);
     }
 
     public void changePassword(String username, String oldPassword, String newPassword) {

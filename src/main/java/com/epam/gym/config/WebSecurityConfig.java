@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -39,26 +40,10 @@ public class WebSecurityConfig {
     @Autowired
     private AuthTokenFilter jwtAuthenticationFilter;
 
-//    @Autowired
-//    private JwtUtils jwtUtils;
-
-//    @Autowired
-//    private UserDetailsService userDetailsService;
-
-//    @Bean
-//    public AuthTokenFilter jwtAuthenticationFilter() {
-//        return new AuthTokenFilter(jwtUtils, userDetailsService);
-//    };
-
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
-//    @Bean
-//    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-//        return config.getAuthenticationManager();
-//    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -72,32 +57,33 @@ public class WebSecurityConfig {
                         // Public endpoints - no authentication required
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/health", "/api/actuator/**").permitAll()
-                        .requestMatchers("/api/v1/**").permitAll()
                         .requestMatchers("/swagger-ui/**",
                                 "/v3/api-docs/**").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                        "/api/v1/trainees/",
+                                 "/api/v1/trainers/").permitAll()
 
-                        // Admin endpoints - require ADMIN role
-//                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/auth/login").permitAll()
+                        .requestMatchers("/api/v1/training-types/").permitAll()
 
-                        // User endpoints - require USER or ADMIN role
-//                        .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
+                        // Specific role restrictions - must come BEFORE /api/v1/**
+//                        .requestMatchers("/api/v1/trainees/**").hasRole("TRAINEE")
+//                        .requestMatchers("/api/v1/trainers/**").hasRole("TRAINER")
 
-                        // Specific HTTP method restrictions
-//                        .requestMatchers(HttpMethod.POST, "/api/**").hasRole("USER")
-//                        .requestMatchers(HttpMethod.PUT, "/api/**").hasRole("USER")
-//                        .requestMatchers(HttpMethod.DELETE, "/api/**").hasRole("ADMIN")
+                        // Endpoints accessible to USER or ADMIN
+//                        .requestMatchers("/api/v1/auth/**",
+//                                "/api/v1/trainings",
+//                                "/api/v1/training-types").hasAnyRole("USER", "ADMIN")
+
+                        // General admin restriction (must come last)
+//                        .requestMatchers("/api/v1/**").hasRole("ADMIN")
 
                         // All other requests require authentication
-//                        .anyRequest().authenticated()
+                        .anyRequest().authenticated()
                 )
 
-                // HTTP Basic Authentication for REST API
-                // You can replace this with JWT authentication if needed
-//                .httpBasic(basic -> basic
-//                        .authenticationEntryPoint(restAuthenticationEntryPoint())
-//                )
+                // JWT authentication
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-
 
                 // Session management
                 .sessionManagement(session -> session
@@ -115,14 +101,6 @@ public class WebSecurityConfig {
 
         return http.build();
     }
-
-//    @Bean
-//    public UserDetailsService userDetailsService() {
-//        JdbcUserDetailsManager userDetailsManager = new JdbcUserDetailsManager();
-//        userDetailsManager.setDataSource(dataSource);
-//
-//        return userDetailsManager;
-//    }
 
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http,

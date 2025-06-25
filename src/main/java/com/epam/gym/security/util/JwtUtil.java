@@ -15,7 +15,7 @@ import java.util.Date;
 public class JwtUtil {
 
     // 👉 keep long, random, Base64‑encoded string in env / config
-    private static final String SECRET = "Z3YlJzI+RUlEYkZORyZKJFN2a3JhT2FvN2ozTjM3Rng=";
+    private static final String SECRET = "870fc857a079157a69c5c03a8788a0c4721d90f8fe35476d1bce3609fc2ede4f";
 
     private SecretKey key;
 

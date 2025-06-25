@@ -22,15 +22,15 @@ public class TrainerController {
 
     private final TrainerService trainerService;
     private final TrainingService trainingService;
-    private final TokenService tokenService;
+//    private final TokenService tokenService;
 
     @Autowired
     public TrainerController(
-            TokenService tokenService,
+//            TokenService tokenService,
             TrainerService trainerService,
             TrainingService trainingService
     ) {
-        this.tokenService = tokenService;
+//        this.tokenService = tokenService;
         this.trainerService = trainerService;
         this.trainingService = trainingService;
     }
@@ -53,18 +53,13 @@ public class TrainerController {
      * Gets trainer profile by username. Requires authentication token.
      *
      * @param username The username of the trainer.
-     * @param token The authentication token.
      * @return ResponseEntity with TrainerProfileResponse and HTTP status OK.
      * @throws InvalidTokenException if the token is invalid.
      */
     @GetMapping("/{username}")
     public ResponseEntity<TrainerProfileResponse> getTrainer(
-            @PathVariable @NotBlank String username,
-            @RequestHeader("X-Auth-Token") String token
+            @PathVariable @NotBlank String username
     ) {
-        if (!tokenService.isValidToken(username, token)){
-            throw new InvalidTokenException("Token not authenticated");
-        }
         TrainerProfileResponse response = trainerService.findTrainerByUsername(username);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -73,18 +68,13 @@ public class TrainerController {
      * Updates trainer profile. Requires authentication token.
      *
      * @param request The trainer update request body.
-     * @param token The authentication token.
      * @return ResponseEntity with updated TrainerProfileResponse and HTTP status OK.
      * @throws InvalidTokenException if the token is invalid.
      */
     @PutMapping("/")
     public ResponseEntity<TrainerProfileResponse> updateTrainer(
-            @Valid @RequestBody TrainerUpdateRequest request,
-            @RequestHeader("X-Auth-Token") String token
+            @Valid @RequestBody TrainerUpdateRequest request
     ) {
-        if (!tokenService.isValidToken(request.username(), token)){
-            throw new InvalidTokenException("Token not authenticated");
-        }
         TrainerProfileResponse response = trainerService.updateTrainer(request);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -93,18 +83,13 @@ public class TrainerController {
      * Gets a list of available trainers for a specific trainee. Requires authentication token.
      *
      * @param traineeUsername The username of the trainee.
-     * @param token The authentication token.
      * @return ResponseEntity with a list of TrainerDto and HTTP status OK.
      * @throws InvalidTokenException if the token is invalid.
      */
     @GetMapping("/available")
     public ResponseEntity<List<TrainerDto>> getAvailableTrainers(
-            @RequestParam String traineeUsername,
-            @RequestHeader("X-Auth-Token") String token
+            @RequestParam String traineeUsername
     ) {
-        if (!tokenService.isValidToken(traineeUsername, token)){
-            throw new InvalidTokenException("Token not authenticated");
-        }
         List<TrainerDto> trainers = trainerService.getAvailableTrainersForTrainee(traineeUsername);
         return ResponseEntity.ok(trainers);
     }
@@ -117,7 +102,6 @@ public class TrainerController {
      * @param from Start date for filtering trainings.
      * @param to End date for filtering trainings.
      * @param traineeName Trainee name for filtering trainings.
-     * @param token The authentication token.
      * @return ResponseEntity with a list of TrainerTrainingResponse and HTTP status OK.
      * @throws InvalidTokenException if the token is invalid.
      */
@@ -126,13 +110,8 @@ public class TrainerController {
             @PathVariable String username,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from, // Changed to RequestParam
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to, // Changed to RequestParam
-            @RequestParam(required = false) String traineeName,
-            @RequestHeader("X-Auth-Token") String token
+            @RequestParam(required = false) String traineeName
     ) {
-        if (!tokenService.isValidToken(username, token)){
-            throw new InvalidTokenException("Token not authenticated");
-        }
-
         TrainerTrainingRequest request = new TrainerTrainingRequest(from, to, traineeName);
 
         List<TrainerTrainingResponse> response = trainingService.getTrainerTrainings(
@@ -148,18 +127,13 @@ public class TrainerController {
      * Uses PATCH method for partial update.
      *
      * @param request The activate user request body.
-     * @param token The authentication token.
      * @return ResponseEntity with HTTP status NO_CONTENT.
      * @throws InvalidTokenException if the token is invalid.
      */
     @PatchMapping("/activation")
     public ResponseEntity<Void> updateTrainerActivation(
-            @Valid @RequestBody ActivateUserRequest request,
-            @RequestHeader("X-Auth-Token") String token
+            @Valid @RequestBody ActivateUserRequest request
     ) {
-        if (!tokenService.isValidToken(request.username(), token)){
-            throw new InvalidTokenException("Token not authenticated");
-        }
         trainerService.changeActiveStatus(request.username(), request.isActive());
         return ResponseEntity.noContent().build();
     }

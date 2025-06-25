@@ -7,12 +7,14 @@ import com.epam.gym.mapper.TraineeMapper;
 import com.epam.gym.mapper.TrainerMapper;
 import com.epam.gym.repository.TrainerRepository;
 import com.epam.gym.repository.TrainingTypeRepository;
+import com.epam.gym.security.util.JwtUtil;
 import com.epam.gym.util.UsernamePasswordUtil;
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -28,6 +30,8 @@ public class TrainerService {
     private final UsernamePasswordUtil usernamePasswordUtil;
     private final TrainerMapper trainerMapper;
     private final TraineeMapper traineeMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     @Autowired
     public TrainerService(
@@ -35,13 +39,17 @@ public class TrainerService {
             TrainingTypeRepository trainingTypeRepository,
             UsernamePasswordUtil usernamePasswordUtil,
             TrainerMapper trainerMapper,
-            TraineeMapper traineeMapper
+            TraineeMapper traineeMapper,
+            PasswordEncoder passwordEncoder,
+            JwtUtil jwtUtil
     ) {
         this.trainerRepository = trainerRepository;
         this.trainingTypeRepository = trainingTypeRepository;
         this.usernamePasswordUtil = usernamePasswordUtil;
         this.trainerMapper = trainerMapper;
         this.traineeMapper = traineeMapper;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
     }
 
     @Transactional
@@ -53,13 +61,17 @@ public class TrainerService {
                 request.firstName(),
                 request.lastName()
         );
+
         String password = usernamePasswordUtil.generatePassword();
+
+        String token = jwtUtil.generateToken(username,
+                password);
 
         User user = new User.Builder()
                 .firstName(request.firstName())
                 .lastName(request.lastName())
                 .username(username)
-                .password(password)
+                .password(passwordEncoder.encode(password))
                 .isActive(true)
                 .role(User.Role.TRAINER)
                 .build();
@@ -78,7 +90,7 @@ public class TrainerService {
         try {
             trainerRepository.save(trainer);
             log.info("Trainer {} created successfully with ID: {}", user.getUsername(), trainer.getId());
-            return trainerMapper.toTrainerRegistrationResponse(trainer);
+            return trainerMapper.toTrainerRegistrationResponse(trainer, password, token);
         } catch (Exception e) {
             log.error("Failed to save trainer: {}", e.getMessage(), e);
             throw new TraineeCreationException("Failed to create trainer", e);

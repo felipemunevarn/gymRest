@@ -8,6 +8,7 @@ import com.epam.gym.exception.TraineeCreationException;
 import com.epam.gym.mapper.TraineeMapper;
 import com.epam.gym.repository.TraineeRepository;
 import com.epam.gym.repository.TrainerRepository;
+import com.epam.gym.security.util.JwtUtil;
 import com.epam.gym.util.UsernamePasswordUtil;
 import jakarta.persistence.NoResultException;
 import org.slf4j.Logger;
@@ -29,6 +30,7 @@ public class TraineeService {
     private final UsernamePasswordUtil usernamePasswordUtil;
     private final TraineeMapper traineeMapper;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     @Autowired
     public TraineeService(
@@ -36,13 +38,15 @@ public class TraineeService {
             TrainerRepository trainerRepository,
             UsernamePasswordUtil usernamePasswordUtil,
             TraineeMapper traineeMapper,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            JwtUtil jwtUtil
     ) {
         this.traineeRepository = traineeRepository;
         this.trainerRepository = trainerRepository;
         this.usernamePasswordUtil = usernamePasswordUtil;
         this.traineeMapper = traineeMapper;
         this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
     }
 
     @Transactional
@@ -54,7 +58,11 @@ public class TraineeService {
                 request.firstName(),
                 request.lastName()
         );
+
         String password = usernamePasswordUtil.generatePassword();
+
+        String token = jwtUtil.generateToken(username,
+                password);
 
         User user = new User.Builder()
                 .firstName(request.firstName())
@@ -74,7 +82,8 @@ public class TraineeService {
         try {
             traineeRepository.save(trainee);
             log.info("Trainee {} created successfully with ID: {}", user.getUsername(), trainee.getId());
-            return  traineeMapper.toTraineeRegistrationResponse(trainee);
+
+            return  traineeMapper.toTraineeRegistrationResponse(trainee, password, token);
         } catch (Exception e) {
             log.error("Failed to save trainee: {}", e.getMessage(), e);
             throw new TraineeCreationException("Failed to create trainee", e);
@@ -152,7 +161,6 @@ public class TraineeService {
     }
 
     @Transactional
-//    public Trainee updateTraineeTrainers(String traineeUsername, List<Trainer> trainers) {
     public TraineeTrainerResponse updateTraineeTrainers(
             String traineeUsername,
             UpdateTraineeTrainersRequest request
@@ -180,7 +188,6 @@ public class TraineeService {
 
         log.info("Updated trainers for trainee with username '{}'.", traineeUsername);
         return new TraineeTrainerResponse(traineeMapper.mapTrainersToTrainerDtoList(savedTrainee.getTrainers()));
-//        return savedTrainee;
     }
 
     @Transactional

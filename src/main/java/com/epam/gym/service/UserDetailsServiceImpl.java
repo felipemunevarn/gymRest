@@ -15,7 +15,7 @@ import java.util.Collections;
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Autowired
-    private UserRepository userRepository; // implement this if needed
+    private UserRepository userRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

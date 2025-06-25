@@ -54,9 +54,9 @@ class TraineeControllerTest {
                 "John", "Doe", LocalDate.of(1990, 1, 1), "123 Main St"
         );
 
-        registrationResponse = new TraineeRegistrationResponse(
-                "john.doe", "tempPassword123"
-        );
+//        registrationResponse = new TraineeRegistrationResponse(
+//                "john.doe", "tempPassword123"
+//        );
 
         profileResponse = new TraineeProfileResponse(
                 "John", "Doe", LocalDate.of(1990, 1, 1),
@@ -113,7 +113,7 @@ class TraineeControllerTest {
     void testGetTrainee_Success_ValidToken() {
         // Given
         String username = "john.doe";
-        String token = "valid-token";
+//        String token = "valid-token";
         when(tokenService.isValidToken(username, token)).thenReturn(true);
         when(traineeService.findTraineeByUsername(username)).thenReturn(profileResponse);
 

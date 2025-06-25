@@ -35,14 +35,17 @@ public class TraineeMapper {
         );
     }
 
-    public TraineeRegistrationResponse toTraineeRegistrationResponse(Trainee trainee) {
+    public TraineeRegistrationResponse toTraineeRegistrationResponse(Trainee trainee,
+                                                                     String password,
+                                                                     String token) {
         if (trainee == null) {
             return null;
         }
 
         return new TraineeRegistrationResponse(
                 trainee.getUser().getUsername(),
-                trainee.getUser().getPassword()
+                password,
+                token
         );
     }
 

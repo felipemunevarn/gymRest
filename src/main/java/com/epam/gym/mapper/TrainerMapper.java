@@ -31,14 +31,17 @@ public class TrainerMapper {
         );
     }
 
-    public TrainerRegistrationResponse toTrainerRegistrationResponse(Trainer trainer) {
+    public TrainerRegistrationResponse toTrainerRegistrationResponse(Trainer trainer,
+                                                                     String password,
+                                                                     String token) {
         if (trainer == null) {
             return null;
         }
 
         return new TrainerRegistrationResponse(
                 trainer.getUser().getUsername(),
-                trainer.getUser().getPassword()
+                password,
+                token
         );
     }
 

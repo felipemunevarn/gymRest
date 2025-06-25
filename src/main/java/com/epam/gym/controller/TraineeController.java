@@ -20,17 +20,17 @@ import java.util.List;
 @RequestMapping(value = "/api/v1/trainees")
 public class TraineeController {
 
-    private final TokenService tokenService;
+//    private final TokenService tokenService;
     private final TraineeService traineeService;
     private final TrainingService trainingService;
 
     @Autowired
     public TraineeController(
-            TokenService tokenService,
+//            TokenService tokenService,
             TraineeService traineeService,
             TrainingService trainingService
     ) {
-        this.tokenService = tokenService;
+//        this.tokenService = tokenService;
         this.traineeService = traineeService;
         this.trainingService = trainingService;
     }
@@ -53,18 +53,13 @@ public class TraineeController {
      * Gets trainee profile by username. Requires authentication token.
      *
      * @param username The username of the trainee.
-     * @param token The authentication token.
      * @return ResponseEntity with TraineeProfileResponse and HTTP status OK.
      * @throws InvalidTokenException if the token is invalid.
      */
     @GetMapping("/{username}")
     public ResponseEntity<TraineeProfileResponse> getTrainee(
-            @PathVariable @NotBlank String username,
-            @RequestHeader("X-Auth-Token") String token
+            @PathVariable @NotBlank String username
     ) {
-        if (!tokenService.isValidToken(username, token)){
-            throw new InvalidTokenException("Token not authenticated");
-        }
         TraineeProfileResponse response = traineeService.findTraineeByUsername(username);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -73,18 +68,13 @@ public class TraineeController {
      * Updates trainee profile. Requires authentication token.
      *
      * @param request The trainee update request body.
-     * @param token The authentication token.
      * @return ResponseEntity with updated TraineeProfileResponse and HTTP status OK.
      * @throws InvalidTokenException if the token is invalid.
      */
     @PutMapping("/")
     public ResponseEntity<TraineeProfileResponse> updateTrainee(
-            @Valid @RequestBody TraineeUpdateRequest request,
-            @RequestHeader("X-Auth-Token") String token
+            @Valid @RequestBody TraineeUpdateRequest request
     ) {
-        if (!tokenService.isValidToken(request.username(), token)){
-            throw new InvalidTokenException("Token not authenticated");
-        }
         TraineeProfileResponse response = traineeService.updateTrainee(request);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -93,17 +83,13 @@ public class TraineeController {
      * Deletes a trainee by username. Requires authentication token.
      *
      * @param username The username of the trainee to delete.
-     * @param token The authentication token.
      * @return ResponseEntity with HTTP status NO_CONTENT.
      * @throws InvalidTokenException if the token is invalid.
      */
     @DeleteMapping("/{username}")
-    public ResponseEntity<Void> deleteTrainee(@PathVariable String username,
-                                              @RequestHeader("X-Auth-Token") String token
+    public ResponseEntity<Void> deleteTrainee(
+            @PathVariable String username
     ) {
-        if (!tokenService.isValidToken(username, token)){
-            throw new InvalidTokenException("Token not authenticated");
-        }
         traineeService.deleteTrainee(username);
         return ResponseEntity.noContent().build();
     }
@@ -117,7 +103,6 @@ public class TraineeController {
      * @param to End date for filtering trainings.
      * @param trainerName Trainer name for filtering trainings.
      * @param specialization Training type specialization for filtering trainings.
-     * @param token The authentication token.
      * @return ResponseEntity with a list of TraineeTrainingResponse and HTTP status OK.
      * @throws InvalidTokenException if the token is invalid.
      */
@@ -127,13 +112,8 @@ public class TraineeController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(required = false) String trainerName,
-            @RequestParam(required = false) String specialization,
-            @RequestHeader("X-Auth-Token") String token
+            @RequestParam(required = false) String specialization
     ) {
-        if (!tokenService.isValidToken(username, token)){
-            throw new InvalidTokenException("Token not authenticated");
-        }
-
         TraineeTrainingRequest request = new TraineeTrainingRequest(from,
                 to,
                 trainerName,
@@ -151,20 +131,14 @@ public class TraineeController {
      *
      * @param username The username of the trainee.
      * @param request The update trainee trainers request body.
-     * @param token The authentication token.
      * @return ResponseEntity with TraineeTrainerResponse and HTTP status OK.
      * @throws InvalidTokenException if the token is invalid.
      */
     @PutMapping("/{username}/trainers")
     public ResponseEntity<TraineeTrainerResponse> updateTraineeTrainers(
             @PathVariable String username,
-            @Valid @RequestBody UpdateTraineeTrainersRequest request,
-            @RequestHeader("X-Auth-Token") String token
+            @Valid @RequestBody UpdateTraineeTrainersRequest request
     ) {
-        if (!tokenService.isValidToken(username, token)){
-            throw new InvalidTokenException("Token not authenticated");
-        }
-//        TraineeTrainerResponse response = facadeService.updateTraineeTrainers(username, request);
         TraineeTrainerResponse response = traineeService.updateTraineeTrainers(username, request);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -174,18 +148,13 @@ public class TraineeController {
      * Uses PATCH method for partial update.
      *
      * @param request The activate user request body.
-     * @param token The authentication token.
      * @return ResponseEntity with HTTP status NO_CONTENT.
      * @throws InvalidTokenException if the token is invalid.
      */
     @PatchMapping("/activation")
     public ResponseEntity<Void> updateTraineeActivation(
-            @Valid @RequestBody ActivateUserRequest request,
-            @RequestHeader("X-Auth-Token") String token
+            @Valid @RequestBody ActivateUserRequest request
     ) {
-        if (!tokenService.isValidToken(request.username(), token)){
-            throw new InvalidTokenException("Token not authenticated");
-        }
         traineeService.changeActiveStatus(request.username(), request.isActive());
         return ResponseEntity.noContent().build();
     }
