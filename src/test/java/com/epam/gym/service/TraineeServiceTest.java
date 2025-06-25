@@ -88,7 +88,7 @@ class TraineeServiceTest {
                 false
         );
 
-        registrationResponse = new TraineeRegistrationResponse("john.doe", "password123");
+        registrationResponse = new TraineeRegistrationResponse("john.doe", "password123","jwt");
         profileResponse = new TraineeProfileResponse(
                 "Jane",
                 "Smith",
@@ -105,7 +105,7 @@ class TraineeServiceTest {
         when(usernamePasswordUtil.generateUsername("John", "Doe")).thenReturn("john.doe");
         when(usernamePasswordUtil.generatePassword()).thenReturn("password123");
         when(traineeRepository.save(any(Trainee.class))).thenReturn(testTrainee);
-        when(traineeMapper.toTraineeRegistrationResponse(any(Trainee.class))).thenReturn(registrationResponse);
+        when(traineeMapper.toTraineeRegistrationResponse(any(Trainee.class),"pass","jwt")).thenReturn(registrationResponse);
 
         // Act
         TraineeRegistrationResponse result = traineeService.createTrainee(registrationRequest);
@@ -115,7 +115,7 @@ class TraineeServiceTest {
         assertEquals("john.doe", result.username());
         assertEquals("password123", result.password());
         verify(traineeRepository).save(any(Trainee.class));
-        verify(traineeMapper).toTraineeRegistrationResponse(any(Trainee.class));
+        verify(traineeMapper).toTraineeRegistrationResponse(any(Trainee.class),"pass","jwt");
     }
 
     @Test
@@ -133,7 +133,7 @@ class TraineeServiceTest {
 
         assertEquals("Failed to create trainee", exception.getMessage());
         verify(traineeRepository).save(any(Trainee.class));
-        verify(traineeMapper, never()).toTraineeRegistrationResponse(any(Trainee.class));
+        verify(traineeMapper, never()).toTraineeRegistrationResponse(any(Trainee.class),"pass","jwt");
     }
 
     @Test

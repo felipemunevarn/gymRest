@@ -1,7 +1,6 @@
 package com.epam.gym.controller;
 
 import com.epam.gym.dto.TrainingRegistrationRequest;
-import com.epam.gym.service.TokenService;
 import com.epam.gym.service.TrainingService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,14 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class TrainingController {
 
     private final TrainingService trainingService;
-    private final TokenService tokenService;
 
     @Autowired
-    public TrainingController(TrainingService trainingService,
-                              TokenService tokenService
-    ) {
+    public TrainingController(TrainingService trainingService) {
         this.trainingService = trainingService;
-        this.tokenService = tokenService;
     }
 
     @PostMapping("/")

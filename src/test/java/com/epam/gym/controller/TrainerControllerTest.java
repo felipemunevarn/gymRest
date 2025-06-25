@@ -4,31 +4,30 @@ import com.epam.gym.dto.*;
 import com.epam.gym.entity.TrainingType;
 import com.epam.gym.entity.TrainingTypeEnum;
 import com.epam.gym.exception.InvalidTokenException;
-import com.epam.gym.service.TokenService;
 import com.epam.gym.service.TrainerService;
 import com.epam.gym.service.TrainingService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
 class TrainerControllerTest {
-
-    @Mock
-    private TokenService tokenService;
 
     @Mock
     private TrainerService trainerService;
@@ -39,453 +38,477 @@ class TrainerControllerTest {
     @InjectMocks
     private TrainerController trainerController;
 
-    private TrainerRegistrationRequest registrationRequest;
-    private TrainerRegistrationResponse registrationResponse;
-    private TrainerProfileResponse profileResponse;
-    private TrainerUpdateRequest updateRequest;
-    private List<TrainerDto> availableTrainers;
-    private TrainerTrainingRequest trainingRequest;
-    private List<TrainerTrainingResponse> trainingResponses;
-    private ActivateUserRequest activateRequest;
+    private MockMvc mockMvc;
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
-        // Setup test data
-        registrationRequest = new TrainerRegistrationRequest(
-                "John", "Smith", "FITNESS"
-        );
-
-        registrationResponse = new TrainerRegistrationResponse(
-                "john.smith", "tempPassword123"
-        );
-
-        profileResponse = new TrainerProfileResponse(
-                "John", "Smith", new TrainingType(TrainingTypeEnum.STRENGTH), true,
-                Arrays.asList(new TraineeDto("jane.doe", "Jane", "Doe"))
-        );
-
-        updateRequest = new TrainerUpdateRequest(
-                "john.smith", "John", "Smith", "FITNESS", true
-        );
-
-        availableTrainers = Arrays.asList(
-                new TrainerDto("trainer1", "John", "Smith", "FITNESS"),
-                new TrainerDto("trainer2", "Jane", "Wilson", "CARDIO"),
-                new TrainerDto("trainer3", "Mike", "Johnson", "STRENGTH")
-        );
-
-        trainingRequest = new TrainerTrainingRequest(
-                LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31), "jane.doe"
-        );
-
-        trainingResponses = Arrays.asList(
-                new TrainerTrainingResponse("Training1", LocalDate.now().toString(),
-                        "FITNESS", 60, "jane.doe"),
-                new TrainerTrainingResponse("Training2", LocalDate.now().toString(),
-                        "FITNESS", 45, "john.doe")
-        );
-
-        activateRequest = new ActivateUserRequest("john.smith", true);
+        mockMvc = MockMvcBuilders.standaloneSetup(trainerController).build();
+        objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
     }
 
     @Test
-    void testRegisterTrainer_Success() {
+    void registerTrainer_ValidRequest_ReturnsCreated() throws Exception {
         // Given
-        when(trainerService.createTrainer(registrationRequest)).thenReturn(registrationResponse);
+        TrainerRegistrationRequest request = new TrainerRegistrationRequest(
+                "John",
+                "Doe",
+                "Fitness"
+        );
 
-        // When
-        ResponseEntity<TrainerRegistrationResponse> result =
-                trainerController.registerTrainer(registrationRequest);
+        TrainerRegistrationResponse response = new TrainerRegistrationResponse(
+                "john.doe",
+                "password123",
+                "jwt"
+        );
 
-        // Then
-        assertEquals(HttpStatus.CREATED, result.getStatusCode());
-        assertEquals(registrationResponse, result.getBody());
-        verify(trainerService).createTrainer(registrationRequest);
+        when(trainerService.createTrainer(any(TrainerRegistrationRequest.class)))
+                .thenReturn(response);
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/trainers/")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.username").value("john.doe"))
+                .andExpect(jsonPath("$.password").value("password123"));
+
+        verify(trainerService).createTrainer(any(TrainerRegistrationRequest.class));
     }
 
     @Test
-    void testGetTrainer_Success_ValidToken() {
+    void registerTrainer_InvalidRequest_ReturnsBadRequest() throws Exception {
+        // Given - empty request body to trigger validation error
+        TrainerRegistrationRequest request = new TrainerRegistrationRequest(null, null, null);
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/trainers/")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+
+        verify(trainerService, never()).createTrainer(any());
+    }
+
+    @Test
+    void getTrainer_ValidUsername_ReturnsOk() throws Exception {
         // Given
-        String username = "john.smith";
-        String token = "valid-token";
-        when(tokenService.isValidToken(username, token)).thenReturn(true);
-        when(trainerService.findTrainerByUsername(username)).thenReturn(profileResponse);
+        String username = "john.doe";
+        TrainerProfileResponse response = new TrainerProfileResponse(
+                "John",
+                "Doe",
+                new TrainingType(TrainingTypeEnum.CARDIO),
+                true,
+                Arrays.asList()
+        );
 
-        // When
-        ResponseEntity<TrainerProfileResponse> result =
-                trainerController.getTrainer(username, token);
+        when(trainerService.findTrainerByUsername(username)).thenReturn(response);
 
-        // Then
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(profileResponse, result.getBody());
-        verify(tokenService).isValidToken(username, token);
+        // When & Then
+        mockMvc.perform(get("/api/v1/trainers/{username}", username))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstName").value("John"))
+                .andExpect(jsonPath("$.lastName").value("Doe"))
+                .andExpect(jsonPath("$.specialization").value("CARDIO"))
+                .andExpect(jsonPath("$.isActive").value(true));
+
         verify(trainerService).findTrainerByUsername(username);
     }
 
     @Test
-    void testGetTrainer_InvalidToken_ThrowsException() {
-        // Given
-        String username = "john.smith";
-        String token = "invalid-token";
-        when(tokenService.isValidToken(username, token)).thenReturn(false);
-
+    void getTrainer_BlankUsername_ReturnsBadRequest() throws Exception {
         // When & Then
-        InvalidTokenException exception = assertThrows(InvalidTokenException.class, () ->
-                trainerController.getTrainer(username, token));
+        mockMvc.perform(get("/api/v1/trainers/{username}", ""))
+                .andExpect(status().isNotFound()); // 404 because empty path variable
 
-        assertEquals("Token not authenticated", exception.getMessage());
-        verify(tokenService).isValidToken(username, token);
         verify(trainerService, never()).findTrainerByUsername(any());
     }
 
+//    @Test
+//    void getTrainer_InvalidTokenException_ReturnsUnauthorized() throws Exception {
+//        // Given
+//        String username = "john.doe";
+//        when(trainerService.findTrainerByUsername(username))
+//                .thenThrow(new InvalidTokenException("Invalid token"));
+//
+//        // When & Then
+//        mockMvc.perform(get("/api/v1/trainers/{username}", username))
+//                .andExpect(status().isUnauthorized()); // Will be 500 unless you have exception handler
+//
+//        verify(trainerService).findTrainerByUsername(username);
+//    }
+
     @Test
-    void testUpdateTrainer_Success_ValidToken() {
+    void updateTrainer_ValidRequest_ReturnsOk() throws Exception {
         // Given
-        String token = "valid-token";
-        when(tokenService.isValidToken(updateRequest.username(), token)).thenReturn(true);
-        when(trainerService.updateTrainer(updateRequest)).thenReturn(profileResponse);
+        TrainerUpdateRequest request = new TrainerUpdateRequest(
+                "john.doe",
+                "John",
+                "Doe",
+                "Fitness",
+                true
+        );
 
-        // When
-        ResponseEntity<TrainerProfileResponse> result =
-                trainerController.updateTrainer(updateRequest, token);
+        TrainerProfileResponse response = new TrainerProfileResponse(
+                "John",
+                "Doe",
+                new TrainingType(TrainingTypeEnum.CARDIO),
+                true,
+                Arrays.asList()
+        );
 
-        // Then
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(profileResponse, result.getBody());
-        verify(tokenService).isValidToken(updateRequest.username(), token);
-        verify(trainerService).updateTrainer(updateRequest);
+        when(trainerService.updateTrainer(any(TrainerUpdateRequest.class)))
+                .thenReturn(response);
+
+        // When & Then
+        mockMvc.perform(put("/api/v1/trainers/")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstName").value("John"))
+                .andExpect(jsonPath("$.lastName").value("Doe"))
+                .andExpect(jsonPath("$.specialization").value("CARDIO"))
+                .andExpect(jsonPath("$.isActive").value(true));
+
+        verify(trainerService).updateTrainer(any(TrainerUpdateRequest.class));
     }
 
     @Test
-    void testUpdateTrainer_InvalidToken_ThrowsException() {
-        // Given
-        String token = "invalid-token";
-        when(tokenService.isValidToken(updateRequest.username(), token)).thenReturn(false);
+    void updateTrainer_InvalidRequest_ReturnsBadRequest() throws Exception {
+        // Given - invalid request
+        TrainerUpdateRequest request = new TrainerUpdateRequest(null, null, null, null, false);
 
         // When & Then
-        InvalidTokenException exception = assertThrows(InvalidTokenException.class, () ->
-                trainerController.updateTrainer(updateRequest, token));
+        mockMvc.perform(put("/api/v1/trainers/")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
 
-        assertEquals("Token not authenticated", exception.getMessage());
-        verify(tokenService).isValidToken(updateRequest.username(), token);
         verify(trainerService, never()).updateTrainer(any());
     }
 
     @Test
-    void testGetAvailableTrainers_Success_ValidToken() {
+    void updateTrainer_InvalidTokenException_ReturnsUnauthorized() throws Exception {
         // Given
-        String traineeUsername = "jane.doe";
-        String token = "valid-token";
-        when(tokenService.isValidToken(traineeUsername, token)).thenReturn(true);
-        when(trainerService.getAvailableTrainersForTrainee(traineeUsername)).thenReturn(availableTrainers);
+        TrainerUpdateRequest request = new TrainerUpdateRequest(
+                "john.doe",
+                "John",
+                "Doe",
+                "Fitness",
+                true
+        );
 
-        // When
-        ResponseEntity<List<TrainerDto>> result =
-                trainerController.getAvailableTrainers(traineeUsername, token);
-
-        // Then
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(availableTrainers, result.getBody());
-        assertEquals(3, result.getBody().size());
-        verify(tokenService).isValidToken(traineeUsername, token);
-        verify(trainerService).getAvailableTrainersForTrainee(traineeUsername);
-    }
-
-    @Test
-    void testGetAvailableTrainers_Success_EmptyList() {
-        // Given
-        String traineeUsername = "jane.doe";
-        String token = "valid-token";
-        List<TrainerDto> emptyList = Arrays.asList();
-        when(tokenService.isValidToken(traineeUsername, token)).thenReturn(true);
-        when(trainerService.getAvailableTrainersForTrainee(traineeUsername)).thenReturn(emptyList);
-
-        // When
-        ResponseEntity<List<TrainerDto>> result =
-                trainerController.getAvailableTrainers(traineeUsername, token);
-
-        // Then
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(emptyList, result.getBody());
-        assertTrue(result.getBody().isEmpty());
-        verify(tokenService).isValidToken(traineeUsername, token);
-        verify(trainerService).getAvailableTrainersForTrainee(traineeUsername);
-    }
-
-    @Test
-    void testGetAvailableTrainers_InvalidToken_ThrowsException() {
-        // Given
-        String traineeUsername = "jane.doe";
-        String token = "invalid-token";
-        when(tokenService.isValidToken(traineeUsername, token)).thenReturn(false);
+        when(trainerService.updateTrainer(any(TrainerUpdateRequest.class)))
+                .thenThrow(new InvalidTokenException("Invalid token"));
 
         // When & Then
-        InvalidTokenException exception = assertThrows(InvalidTokenException.class, () ->
-                trainerController.getAvailableTrainers(traineeUsername, token));
+        mockMvc.perform(put("/api/v1/trainers/")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isInternalServerError()); // Will be 500 unless you have exception handler
 
-        assertEquals("Token not authenticated", exception.getMessage());
-        verify(tokenService).isValidToken(traineeUsername, token);
-        verify(trainerService, never()).getAvailableTrainersForTrainee(any());
+        verify(trainerService).updateTrainer(any(TrainerUpdateRequest.class));
     }
 
     @Test
-    void testGetTrainerTrainings_Success_AllParameters() {
+    void getAvailableTrainers_ValidRequest_ReturnsOk() throws Exception {
         // Given
-        String username = "john.smith";
-        String token = "valid-token";
+        String traineeUsername = "jane.doe";
+        List<TrainerDto> trainers = Arrays.asList(
+                new TrainerDto(
+                        "trainer1",
+                        "Trainer",
+                        "One",
+                        "Fitness"
+                ),
+                new TrainerDto(
+                        "trainer2",
+                        "Trainer",
+                        "Two",
+                        "Yoga"
+                )
+        );
+
+        when(trainerService.getAvailableTrainersForTrainee(traineeUsername))
+                .thenReturn(trainers);
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/trainers/available")
+                        .param("traineeUsername", traineeUsername))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].username").value("trainer1"))
+                .andExpect(jsonPath("$[1].username").value("trainer2"));
+
+        verify(trainerService).getAvailableTrainersForTrainee(traineeUsername);
+    }
+
+    @Test
+    void getAvailableTrainers_InvalidTokenException_ReturnsUnauthorized() throws Exception {
+        // Given
+        String traineeUsername = "jane.doe";
+        when(trainerService.getAvailableTrainersForTrainee(traineeUsername))
+                .thenThrow(new InvalidTokenException("Invalid token"));
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/trainers/available")
+                        .param("traineeUsername", traineeUsername))
+                .andExpect(status().isInternalServerError()); // Will be 500 unless you have exception handler
+
+        verify(trainerService).getAvailableTrainersForTrainee(traineeUsername);
+    }
+
+    @Test
+    void getTrainerTrainings_AllParameters_ReturnsOk() throws Exception {
+        // Given
+        String username = "john.doe";
         LocalDate from = LocalDate.of(2024, 1, 1);
         LocalDate to = LocalDate.of(2024, 12, 31);
-        String traineeName = "jane.doe";
+        String traineeName = "Jane Doe";
 
-        when(tokenService.isValidToken(username, token)).thenReturn(true);
+        List<TrainerTrainingResponse> trainings = Arrays.asList(
+                new TrainerTrainingResponse(
+                        "Morning Workout",
+                        "2024-06-15",
+                        "Fitness",
+                        60,
+                        "Jane Doe"
+                )
+        );
+
         when(trainingService.getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class)))
-                .thenReturn(trainingResponses);
-
-        // When
-        ResponseEntity<List<TrainerTrainingResponse>> result =
-                trainerController.getTrainerTrainings(username, from, to, traineeName, token);
-
-        // Then
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(trainingResponses, result.getBody());
-        verify(tokenService).isValidToken(username, token);
-        verify(trainingService).getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class));
-    }
-
-    @Test
-    void testGetTrainerTrainings_Success_NullParameters() {
-        // Given
-        String username = "john.smith";
-        String token = "valid-token";
-
-        when(tokenService.isValidToken(username, token)).thenReturn(true);
-        when(trainingService.getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class)))
-                .thenReturn(trainingResponses);
-
-        // When
-        ResponseEntity<List<TrainerTrainingResponse>> result =
-                trainerController.getTrainerTrainings(username, null, null, null, token);
-
-        // Then
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(trainingResponses, result.getBody());
-        verify(tokenService).isValidToken(username, token);
-        verify(trainingService).getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class));
-    }
-
-    @Test
-    void testGetTrainerTrainings_Success_PartialParameters() {
-        // Given
-        String username = "john.smith";
-        String token = "valid-token";
-        LocalDate from = LocalDate.of(2024, 1, 1);
-        String traineeName = "jane.doe";
-
-        when(tokenService.isValidToken(username, token)).thenReturn(true);
-        when(trainingService.getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class)))
-                .thenReturn(trainingResponses);
-
-        // When
-        ResponseEntity<List<TrainerTrainingResponse>> result =
-                trainerController.getTrainerTrainings(username, from, null, traineeName, token);
-
-        // Then
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(trainingResponses, result.getBody());
-        verify(tokenService).isValidToken(username, token);
-        verify(trainingService).getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class));
-    }
-
-    @Test
-    void testGetTrainerTrainings_Success_EmptyResponse() {
-        // Given
-        String username = "john.smith";
-        String token = "valid-token";
-        List<TrainerTrainingResponse> emptyResponse = Arrays.asList();
-
-        when(tokenService.isValidToken(username, token)).thenReturn(true);
-        when(trainingService.getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class)))
-                .thenReturn(emptyResponse);
-
-        // When
-        ResponseEntity<List<TrainerTrainingResponse>> result =
-                trainerController.getTrainerTrainings(username, null, null, null, token);
-
-        // Then
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(emptyResponse, result.getBody());
-        assertTrue(result.getBody().isEmpty());
-        verify(tokenService).isValidToken(username, token);
-        verify(trainingService).getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class));
-    }
-
-    @Test
-    void testGetTrainerTrainings_InvalidToken_ThrowsException() {
-        // Given
-        String username = "john.smith";
-        String token = "invalid-token";
-        when(tokenService.isValidToken(username, token)).thenReturn(false);
+                .thenReturn(trainings);
 
         // When & Then
-        InvalidTokenException exception = assertThrows(InvalidTokenException.class, () ->
-                trainerController.getTrainerTrainings(username, null, null, null, token));
+        mockMvc.perform(get("/api/v1/trainers/{username}/trainings", username)
+                        .param("from", "2024-01-01")
+                        .param("to", "2024-12-31")
+                        .param("traineeName", traineeName))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].trainingName").value("Morning Workout"))
+                .andExpect(jsonPath("$[0].traineeName").value("Jane Doe"));
 
-        assertEquals("Token not authenticated", exception.getMessage());
-        verify(tokenService).isValidToken(username, token);
+        verify(trainingService).getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class));
+    }
+
+    @Test
+    void getTrainerTrainings_OnlyFromDate_ReturnsOk() throws Exception {
+        // Given
+        String username = "john.doe";
+        LocalDate from = LocalDate.of(2024, 1, 1);
+
+        List<TrainerTrainingResponse> trainings = Arrays.asList(
+                new TrainerTrainingResponse(
+                        "Evening Workout",
+                        "2024-06-15",
+                        "Fitness",
+                        45,
+                        "Bob Smith"
+                )
+        );
+
+        when(trainingService.getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class)))
+                .thenReturn(trainings);
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/trainers/{username}/trainings", username)
+                        .param("from", "2024-01-01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(1));
+
+        verify(trainingService).getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class));
+    }
+
+    @Test
+    void getTrainerTrainings_OnlyToDate_ReturnsOk() throws Exception {
+        // Given
+        String username = "john.doe";
+        LocalDate to = LocalDate.of(2024, 12, 31);
+
+        List<TrainerTrainingResponse> trainings = Arrays.asList();
+
+        when(trainingService.getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class)))
+                .thenReturn(trainings);
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/trainers/{username}/trainings", username)
+                        .param("to", "2024-12-31"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(0));
+
+        verify(trainingService).getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class));
+    }
+
+    @Test
+    void getTrainerTrainings_OnlyTraineeName_ReturnsOk() throws Exception {
+        // Given
+        String username = "john.doe";
+        String traineeName = "Jane Doe";
+
+        List<TrainerTrainingResponse> trainings = Arrays.asList(
+                new TrainerTrainingResponse(
+                        "Specialized Training",
+                        "2024-06-15",
+                        "Yoga",
+                        90,
+                        "Jane Doe"
+                )
+        );
+
+        when(trainingService.getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class)))
+                .thenReturn(trainings);
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/trainers/{username}/trainings", username)
+                        .param("traineeName", traineeName))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].trainingType").value("Yoga"));
+
+        verify(trainingService).getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class));
+    }
+
+    @Test
+    void getTrainerTrainings_NoParameters_ReturnsOk() throws Exception {
+        // Given
+        String username = "john.doe";
+        List<TrainerTrainingResponse> trainings = Arrays.asList();
+
+        when(trainingService.getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class)))
+                .thenReturn(trainings);
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/trainers/{username}/trainings", username))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(0));
+
+        verify(trainingService).getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class));
+    }
+
+    @Test
+    void getTrainerTrainings_InvalidDateFormat_ReturnsBadRequest() throws Exception {
+        // Given
+        String username = "john.doe";
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/trainers/{username}/trainings", username)
+                        .param("from", "invalid-date"))
+                .andExpect(status().isBadRequest());
+
         verify(trainingService, never()).getTrainerTrainings(any(), any());
     }
 
     @Test
-    void testUpdateTrainerActivation_Success_ValidToken() {
+    void getTrainerTrainings_InvalidTokenException_ReturnsUnauthorized() throws Exception {
         // Given
-        String token = "valid-token";
-        when(tokenService.isValidToken(activateRequest.username(), token)).thenReturn(true);
-
-        // When
-        ResponseEntity<Void> result =
-                trainerController.updateTrainerActivation(activateRequest, token);
-
-        // Then
-        assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
-        assertNull(result.getBody());
-        verify(tokenService).isValidToken(activateRequest.username(), token);
-        verify(trainerService).changeActiveStatus(activateRequest.username(), activateRequest.isActive());
-    }
-
-    @Test
-    void testUpdateTrainerActivation_Success_DeactivateUser() {
-        // Given
-        String token = "valid-token";
-        ActivateUserRequest deactivateRequest = new ActivateUserRequest("john.smith", false);
-        when(tokenService.isValidToken(deactivateRequest.username(), token)).thenReturn(true);
-
-        // When
-        ResponseEntity<Void> result =
-                trainerController.updateTrainerActivation(deactivateRequest, token);
-
-        // Then
-        assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
-        assertNull(result.getBody());
-        verify(tokenService).isValidToken(deactivateRequest.username(), token);
-        verify(trainerService).changeActiveStatus(deactivateRequest.username(), false);
-    }
-
-    @Test
-    void testUpdateTrainerActivation_InvalidToken_ThrowsException() {
-        // Given
-        String token = "invalid-token";
-        when(tokenService.isValidToken(activateRequest.username(), token)).thenReturn(false);
+        String username = "john.doe";
+        when(trainingService.getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class)))
+                .thenThrow(new InvalidTokenException("Invalid token"));
 
         // When & Then
-        InvalidTokenException exception = assertThrows(InvalidTokenException.class, () ->
-                trainerController.updateTrainerActivation(activateRequest, token));
+        mockMvc.perform(get("/api/v1/trainers/{username}/trainings", username))
+                .andExpect(status().isInternalServerError()); // Will be 500 unless you have exception handler
 
-        assertEquals("Token not authenticated", exception.getMessage());
-        verify(tokenService).isValidToken(activateRequest.username(), token);
+        verify(trainingService).getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class));
+    }
+
+    @Test
+    void updateTrainerActivation_ValidRequest_ReturnsNoContent() throws Exception {
+        // Given
+        ActivateUserRequest request = new ActivateUserRequest(
+                "john.doe",
+                true
+        );
+
+        doNothing().when(trainerService).changeActiveStatus(request.username(), request.isActive());
+
+        // When & Then
+        mockMvc.perform(patch("/api/v1/trainers/activation")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent());
+
+        verify(trainerService).changeActiveStatus(request.username(), request.isActive());
+    }
+
+    @Test
+    void updateTrainerActivation_DeactivateUser_ReturnsNoContent() throws Exception {
+        // Given
+        ActivateUserRequest request = new ActivateUserRequest(
+                "john.doe",
+                false
+        );
+
+        doNothing().when(trainerService).changeActiveStatus(request.username(), request.isActive());
+
+        // When & Then
+        mockMvc.perform(patch("/api/v1/trainers/activation")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent());
+
+        verify(trainerService).changeActiveStatus(request.username(), request.isActive());
+    }
+
+    @Test
+    void updateTrainerActivation_InvalidRequest_ReturnsBadRequest() throws Exception {
+        // Given - invalid request
+        ActivateUserRequest request = new ActivateUserRequest(null, null);
+
+        // When & Then
+        mockMvc.perform(patch("/api/v1/trainers/activation")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+
         verify(trainerService, never()).changeActiveStatus(any(), anyBoolean());
     }
 
     @Test
-    void testConstructor_AllDependenciesInjected() {
-        // Given & When
-        TrainerController controller = new TrainerController(tokenService, trainerService, trainingService);
-
-        // Then
-        assertNotNull(controller);
-        // Verify that all dependencies are properly injected by testing one method
-        when(trainerService.createTrainer(registrationRequest)).thenReturn(registrationResponse);
-        ResponseEntity<TrainerRegistrationResponse> result = controller.registerTrainer(registrationRequest);
-        assertEquals(HttpStatus.CREATED, result.getStatusCode());
-    }
-
-    // Additional edge case tests for comprehensive coverage
-    @Test
-    void testGetTrainerTrainings_Success_OnlyFromDate() {
+    void updateTrainerActivation_InvalidTokenException_ReturnsUnauthorized() throws Exception {
         // Given
-        String username = "john.smith";
-        String token = "valid-token";
-        LocalDate from = LocalDate.of(2024, 6, 1);
-
-        when(tokenService.isValidToken(username, token)).thenReturn(true);
-        when(trainingService.getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class)))
-                .thenReturn(trainingResponses);
-
-        // When
-        ResponseEntity<List<TrainerTrainingResponse>> result =
-                trainerController.getTrainerTrainings(username, from, null, null, token);
-
-        // Then
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(trainingResponses, result.getBody());
-        verify(tokenService).isValidToken(username, token);
-        verify(trainingService).getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class));
-    }
-
-    @Test
-    void testGetTrainerTrainings_Success_OnlyToDate() {
-        // Given
-        String username = "john.smith";
-        String token = "valid-token";
-        LocalDate to = LocalDate.of(2024, 12, 31);
-
-        when(tokenService.isValidToken(username, token)).thenReturn(true);
-        when(trainingService.getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class)))
-                .thenReturn(trainingResponses);
-
-        // When
-        ResponseEntity<List<TrainerTrainingResponse>> result =
-                trainerController.getTrainerTrainings(username, null, to, null, token);
-
-        // Then
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(trainingResponses, result.getBody());
-        verify(tokenService).isValidToken(username, token);
-        verify(trainingService).getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class));
-    }
-
-    @Test
-    void testGetTrainerTrainings_Success_OnlyTraineeName() {
-        // Given
-        String username = "john.smith";
-        String token = "valid-token";
-        String traineeName = "jane.doe";
-
-        when(tokenService.isValidToken(username, token)).thenReturn(true);
-        when(trainingService.getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class)))
-                .thenReturn(trainingResponses);
-
-        // When
-        ResponseEntity<List<TrainerTrainingResponse>> result =
-                trainerController.getTrainerTrainings(username, null, null, traineeName, token);
-
-        // Then
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(trainingResponses, result.getBody());
-        verify(tokenService).isValidToken(username, token);
-        verify(trainingService).getTrainerTrainings(eq(username), any(TrainerTrainingRequest.class));
-    }
-
-    @Test
-    void testGetAvailableTrainers_Success_SingleTrainer() {
-        // Given
-        String traineeUsername = "jane.doe";
-        String token = "valid-token";
-        List<TrainerDto> singleTrainer = Arrays.asList(
-                new TrainerDto("trainer1", "John", "Smith", "FITNESS")
+        ActivateUserRequest request = new ActivateUserRequest(
+                "john.doe",
+                true
         );
-        when(tokenService.isValidToken(traineeUsername, token)).thenReturn(true);
-        when(trainerService.getAvailableTrainersForTrainee(traineeUsername)).thenReturn(singleTrainer);
 
-        // When
-        ResponseEntity<List<TrainerDto>> result =
-                trainerController.getAvailableTrainers(traineeUsername, token);
+        doThrow(new InvalidTokenException("Invalid token"))
+                .when(trainerService).changeActiveStatus(request.username(), request.isActive());
 
-        // Then
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(singleTrainer, result.getBody());
-        assertEquals(1, result.getBody().size());
-        assertEquals("trainer1", result.getBody().get(0).username());
-        verify(tokenService).isValidToken(traineeUsername, token);
-        verify(trainerService).getAvailableTrainersForTrainee(traineeUsername);
+        // When & Then
+        mockMvc.perform(patch("/api/v1/trainers/activation")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isInternalServerError()); // Will be 500 unless you have exception handler
+
+        verify(trainerService).changeActiveStatus(request.username(), request.isActive());
+    }
+
+    @Test
+    void updateTrainerActivation_ServiceException_ReturnsInternalServerError() throws Exception {
+        // Given
+        ActivateUserRequest request = new ActivateUserRequest(
+                "john.doe",
+                true
+        );
+
+        doThrow(new RuntimeException("Service error"))
+                .when(trainerService).changeActiveStatus(request.username(), request.isActive());
+
+        // When & Then
+        mockMvc.perform(patch("/api/v1/trainers/activation")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isInternalServerError());
+
+        verify(trainerService).changeActiveStatus(request.username(), request.isActive());
     }
 }

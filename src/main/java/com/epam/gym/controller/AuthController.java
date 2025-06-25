@@ -2,16 +2,13 @@ package com.epam.gym.controller;
 
 import com.epam.gym.dto.ChangePasswordRequest;
 import com.epam.gym.dto.LoginRequest;
-import com.epam.gym.dto.TokenValidationResponse;
 import com.epam.gym.entity.User;
 import com.epam.gym.exception.InvalidTokenException;
 import com.epam.gym.exception.LockedException;
 import com.epam.gym.repository.UserRepository;
 import com.epam.gym.security.util.JwtUtil;
-import com.epam.gym.security.util.TokenBlacklist;
 import com.epam.gym.service.AuthService;
 import com.epam.gym.service.LoginAttemptService;
-import com.epam.gym.service.TokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,33 +23,26 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
-
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
     private final AuthService authService;
     private final JwtUtil jwtUtil;
-    private final TokenService tokenService;
     private final AuthenticationManager authenticationManager;
-    private final TokenBlacklist tokenBlacklist;
     private final LoginAttemptService loginAttemptService;
     private final UserRepository userRepository;
 
     @Autowired
     public AuthController(AuthService authService,
                           JwtUtil jwtUtil,
-                          TokenService tokenService,
                           AuthenticationManager authenticationManager,
-                          TokenBlacklist tokenBlacklist,
                           LoginAttemptService loginAttemptService,
                           UserRepository userRepository
     ) {
         this.authService = authService;
         this.jwtUtil = jwtUtil;
-        this.tokenService = tokenService;
         this.authenticationManager = authenticationManager;
-        this.tokenBlacklist = tokenBlacklist;
         this.loginAttemptService = loginAttemptService;
         this.userRepository = userRepository;
     }
@@ -152,7 +142,6 @@ public class AuthController {
 
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
-            tokenBlacklist.blacklist(token);
         }
 
         return ResponseEntity.ok("Logged out successfully.");
@@ -165,15 +154,15 @@ public class AuthController {
 //     * @return ResponseEntity with TokenValidationResponse and HTTP status OK if valid,
 //     * or HTTP status UNAUTHORIZED if invalid.
 //     */
-    @GetMapping("/validate")
-    public ResponseEntity<TokenValidationResponse> validateToken(@RequestHeader("X-Auth-Token") String token) {
-        if (tokenService.isValidToken(tokenService.getUsername(token),token)) {
-            String username = tokenService.getUsername(token);
-            TokenValidationResponse response = new TokenValidationResponse(true, username);
-            return ResponseEntity.ok(response);
-        } else {
-            TokenValidationResponse response = new TokenValidationResponse(false, null);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-        }
-    }
+//    @GetMapping("/validate")
+//    public ResponseEntity<TokenValidationResponse> validateToken(@RequestHeader("X-Auth-Token") String token) {
+//        if (tokenService.isValidToken(tokenService.getUsername(token),token)) {
+//            String username = tokenService.getUsername(token);
+//            TokenValidationResponse response = new TokenValidationResponse(true, username);
+//            return ResponseEntity.ok(response);
+//        } else {
+//            TokenValidationResponse response = new TokenValidationResponse(false, null);
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+//        }
+//    }
 }

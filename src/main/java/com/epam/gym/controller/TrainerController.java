@@ -2,7 +2,6 @@ package com.epam.gym.controller;
 
 import com.epam.gym.dto.*;
 import com.epam.gym.exception.InvalidTokenException;
-import com.epam.gym.service.TokenService;
 import com.epam.gym.service.TrainerService;
 import com.epam.gym.service.TrainingService;
 import jakarta.validation.Valid;

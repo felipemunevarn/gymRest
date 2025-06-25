@@ -84,7 +84,7 @@ class TrainerServiceTest {
                 false
         );
 
-        registrationResponse = new TrainerRegistrationResponse("john.trainer", "password123");
+        registrationResponse = new TrainerRegistrationResponse("john.trainer", "password123","jwt");
         profileResponse = new TrainerProfileResponse(
                 "Jane",
                 "Smith",
@@ -102,7 +102,7 @@ class TrainerServiceTest {
         when(trainingTypeRepository.findByType(TrainingTypeEnum.FLEXIBILITY))
                 .thenReturn(Optional.of(testTrainingType)); // Added mock for training type
         when(trainerRepository.save(any(Trainer.class))).thenReturn(testTrainer);
-        when(trainerMapper.toTrainerRegistrationResponse(any(Trainer.class))).thenReturn(registrationResponse);
+        when(trainerMapper.toTrainerRegistrationResponse(any(Trainer.class),"pass","jwt")).thenReturn(registrationResponse);
 
         // Act
         TrainerRegistrationResponse result = trainerService.createTrainer(registrationRequest);
@@ -113,7 +113,7 @@ class TrainerServiceTest {
         assertEquals("password123", result.password());
         verify(trainingTypeRepository).findByType(TrainingTypeEnum.FLEXIBILITY);
         verify(trainerRepository).save(any(Trainer.class));
-        verify(trainerMapper).toTrainerRegistrationResponse(any(Trainer.class));
+        verify(trainerMapper).toTrainerRegistrationResponse(any(Trainer.class),"pass","jwt");
     }
 
     @Test
@@ -133,7 +133,7 @@ class TrainerServiceTest {
 
         assertEquals("Failed to create trainer", exception.getMessage());
         verify(trainerRepository).save(any(Trainer.class));
-        verify(trainerMapper, never()).toTrainerRegistrationResponse(any(Trainer.class));
+        verify(trainerMapper, never()).toTrainerRegistrationResponse(any(Trainer.class),"pass","jwt");
     }
 
     @Test

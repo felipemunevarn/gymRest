@@ -2,7 +2,6 @@ package com.epam.gym.controller;
 
 import com.epam.gym.dto.*;
 import com.epam.gym.exception.InvalidTokenException;
-import com.epam.gym.service.TokenService;
 import com.epam.gym.service.TraineeService;
 import com.epam.gym.service.TrainingService;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,9 +23,6 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class TraineeControllerTest {
-
-    @Mock
-    private TokenService tokenService;
 
     @Mock
     private TraineeService traineeService;
@@ -54,9 +50,6 @@ class TraineeControllerTest {
                 "John", "Doe", LocalDate.of(1990, 1, 1), "123 Main St"
         );
 
-//        registrationResponse = new TraineeRegistrationResponse(
-//                "john.doe", "tempPassword123"
-//        );
 
         profileResponse = new TraineeProfileResponse(
                 "John", "Doe", LocalDate.of(1990, 1, 1),
@@ -110,107 +103,6 @@ class TraineeControllerTest {
     }
 
     @Test
-    void testGetTrainee_Success_ValidToken() {
-        // Given
-        String username = "john.doe";
-//        String token = "valid-token";
-        when(tokenService.isValidToken(username, token)).thenReturn(true);
-        when(traineeService.findTraineeByUsername(username)).thenReturn(profileResponse);
-
-        // When
-        ResponseEntity<TraineeProfileResponse> result =
-                traineeController.getTrainee(username, token);
-
-        // Then
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(profileResponse, result.getBody());
-        verify(tokenService).isValidToken(username, token);
-        verify(traineeService).findTraineeByUsername(username);
-    }
-
-    @Test
-    void testGetTrainee_InvalidToken_ThrowsException() {
-        // Given
-        String username = "john.doe";
-        String token = "invalid-token";
-        when(tokenService.isValidToken(username, token)).thenReturn(false);
-
-        // When & Then
-        InvalidTokenException exception = assertThrows(InvalidTokenException.class, () ->
-                traineeController.getTrainee(username, token));
-
-        assertEquals("Token not authenticated", exception.getMessage());
-        verify(tokenService).isValidToken(username, token);
-        verify(traineeService, never()).findTraineeByUsername(any());
-    }
-
-    @Test
-    void testUpdateTrainee_Success_ValidToken() {
-        // Given
-        String token = "valid-token";
-        when(tokenService.isValidToken(updateRequest.username(), token)).thenReturn(true);
-        when(traineeService.updateTrainee(updateRequest)).thenReturn(profileResponse);
-
-        // When
-        ResponseEntity<TraineeProfileResponse> result =
-                traineeController.updateTrainee(updateRequest, token);
-
-        // Then
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(profileResponse, result.getBody());
-        verify(tokenService).isValidToken(updateRequest.username(), token);
-        verify(traineeService).updateTrainee(updateRequest);
-    }
-
-    @Test
-    void testUpdateTrainee_InvalidToken_ThrowsException() {
-        // Given
-        String token = "invalid-token";
-        when(tokenService.isValidToken(updateRequest.username(), token)).thenReturn(false);
-
-        // When & Then
-        InvalidTokenException exception = assertThrows(InvalidTokenException.class, () ->
-                traineeController.updateTrainee(updateRequest, token));
-
-        assertEquals("Token not authenticated", exception.getMessage());
-        verify(tokenService).isValidToken(updateRequest.username(), token);
-        verify(traineeService, never()).updateTrainee(any());
-    }
-
-    @Test
-    void testDeleteTrainee_Success_ValidToken() {
-        // Given
-        String username = "john.doe";
-        String token = "valid-token";
-        when(tokenService.isValidToken(username, token)).thenReturn(true);
-
-        // When
-        ResponseEntity<Void> result = traineeController.deleteTrainee(username, token);
-
-        // Then
-        assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
-        assertNull(result.getBody());
-        verify(tokenService).isValidToken(username, token);
-        verify(traineeService).deleteTrainee(username);
-    }
-
-    @Test
-    void testDeleteTrainee_InvalidToken_ThrowsException() {
-        // Given
-        String username = "john.doe";
-        String token = "invalid-token";
-        when(tokenService.isValidToken(username, token)).thenReturn(false);
-
-        // When & Then
-        InvalidTokenException exception = assertThrows(InvalidTokenException.class, () ->
-                traineeController.deleteTrainee(username, token));
-
-        assertEquals("Token not authenticated", exception.getMessage());
-        verify(tokenService).isValidToken(username, token);
-        verify(traineeService, never()).deleteTrainee(any());
-    }
-
-    @Test
     void testGetTraineeTrainings_Success_AllParameters() {
         // Given
         String username = "john.doe";
@@ -220,18 +112,16 @@ class TraineeControllerTest {
         String trainerName = "trainer1";
         String specialization = "FITNESS";
 
-        when(tokenService.isValidToken(username, token)).thenReturn(true);
         when(trainingService.getTraineeTrainings(eq(username), any(TraineeTrainingRequest.class)))
                 .thenReturn(trainingResponses);
 
         // When
         ResponseEntity<List<TraineeTrainingResponse>> result =
-                traineeController.getTraineeTrainings(username, from, to, trainerName, specialization, token);
+                traineeController.getTraineeTrainings(username, from, to, trainerName, specialization);
 
         // Then
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertEquals(trainingResponses, result.getBody());
-        verify(tokenService).isValidToken(username, token);
         verify(trainingService).getTraineeTrainings(eq(username), any(TraineeTrainingRequest.class));
     }
 
@@ -241,18 +131,16 @@ class TraineeControllerTest {
         String username = "john.doe";
         String token = "valid-token";
 
-        when(tokenService.isValidToken(username, token)).thenReturn(true);
         when(trainingService.getTraineeTrainings(eq(username), any(TraineeTrainingRequest.class)))
                 .thenReturn(trainingResponses);
 
         // When
         ResponseEntity<List<TraineeTrainingResponse>> result =
-                traineeController.getTraineeTrainings(username, null, null, null, null, token);
+                traineeController.getTraineeTrainings(username, null, null, null, null);
 
         // Then
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertEquals(trainingResponses, result.getBody());
-        verify(tokenService).isValidToken(username, token);
         verify(trainingService).getTraineeTrainings(eq(username), any(TraineeTrainingRequest.class));
     }
 
@@ -261,14 +149,12 @@ class TraineeControllerTest {
         // Given
         String username = "john.doe";
         String token = "invalid-token";
-        when(tokenService.isValidToken(username, token)).thenReturn(false);
 
         // When & Then
         InvalidTokenException exception = assertThrows(InvalidTokenException.class, () ->
-                traineeController.getTraineeTrainings(username, null, null, null, null, token));
+                traineeController.getTraineeTrainings(username, null, null, null, null));
 
         assertEquals("Token not authenticated", exception.getMessage());
-        verify(tokenService).isValidToken(username, token);
         verify(trainingService, never()).getTraineeTrainings(any(), any());
     }
 
@@ -277,18 +163,16 @@ class TraineeControllerTest {
         // Given
         String username = "john.doe";
         String token = "valid-token";
-        when(tokenService.isValidToken(username, token)).thenReturn(true);
         when(traineeService.updateTraineeTrainers(username, updateTrainersRequest))
                 .thenReturn(trainerResponse);
 
         // When
         ResponseEntity<TraineeTrainerResponse> result =
-                traineeController.updateTraineeTrainers(username, updateTrainersRequest, token);
+                traineeController.updateTraineeTrainers(username, updateTrainersRequest);
 
         // Then
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertEquals(trainerResponse, result.getBody());
-        verify(tokenService).isValidToken(username, token);
         verify(traineeService).updateTraineeTrainers(username, updateTrainersRequest);
     }
 
@@ -297,14 +181,12 @@ class TraineeControllerTest {
         // Given
         String username = "john.doe";
         String token = "invalid-token";
-        when(tokenService.isValidToken(username, token)).thenReturn(false);
 
         // When & Then
         InvalidTokenException exception = assertThrows(InvalidTokenException.class, () ->
-                traineeController.updateTraineeTrainers(username, updateTrainersRequest, token));
+                traineeController.updateTraineeTrainers(username, updateTrainersRequest));
 
         assertEquals("Token not authenticated", exception.getMessage());
-        verify(tokenService).isValidToken(username, token);
         verify(traineeService, never()).updateTraineeTrainers(any(), any());
     }
 
@@ -312,16 +194,14 @@ class TraineeControllerTest {
     void testUpdateTraineeActivation_Success_ValidToken() {
         // Given
         String token = "valid-token";
-        when(tokenService.isValidToken(activateRequest.username(), token)).thenReturn(true);
 
         // When
         ResponseEntity<Void> result =
-                traineeController.updateTraineeActivation(activateRequest, token);
+                traineeController.updateTraineeActivation(activateRequest);
 
         // Then
         assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
         assertNull(result.getBody());
-        verify(tokenService).isValidToken(activateRequest.username(), token);
         verify(traineeService).changeActiveStatus(activateRequest.username(), activateRequest.isActive());
     }
 
@@ -330,16 +210,14 @@ class TraineeControllerTest {
         // Given
         String token = "valid-token";
         ActivateUserRequest deactivateRequest = new ActivateUserRequest("john.doe", false);
-        when(tokenService.isValidToken(deactivateRequest.username(), token)).thenReturn(true);
 
         // When
         ResponseEntity<Void> result =
-                traineeController.updateTraineeActivation(deactivateRequest, token);
+                traineeController.updateTraineeActivation(deactivateRequest);
 
         // Then
         assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
         assertNull(result.getBody());
-        verify(tokenService).isValidToken(deactivateRequest.username(), token);
         verify(traineeService).changeActiveStatus(deactivateRequest.username(), false);
     }
 
@@ -347,28 +225,13 @@ class TraineeControllerTest {
     void testUpdateTraineeActivation_InvalidToken_ThrowsException() {
         // Given
         String token = "invalid-token";
-        when(tokenService.isValidToken(activateRequest.username(), token)).thenReturn(false);
 
         // When & Then
         InvalidTokenException exception = assertThrows(InvalidTokenException.class, () ->
-                traineeController.updateTraineeActivation(activateRequest, token));
+                traineeController.updateTraineeActivation(activateRequest));
 
         assertEquals("Token not authenticated", exception.getMessage());
-        verify(tokenService).isValidToken(activateRequest.username(), token);
         verify(traineeService, never()).changeActiveStatus(any(), anyBoolean());
-    }
-
-    @Test
-    void testConstructor_AllDependenciesInjected() {
-        // Given & When
-        TraineeController controller = new TraineeController(tokenService, traineeService, trainingService);
-
-        // Then
-        assertNotNull(controller);
-        // Verify that all dependencies are properly injected by testing one method
-        when(traineeService.createTrainee(registrationRequest)).thenReturn(registrationResponse);
-        ResponseEntity<TraineeRegistrationResponse> result = controller.registerTrainee(registrationRequest);
-        assertEquals(HttpStatus.CREATED, result.getStatusCode());
     }
 
     // Additional edge case tests for better coverage
@@ -380,18 +243,16 @@ class TraineeControllerTest {
         LocalDate from = LocalDate.of(2024, 1, 1);
         String trainerName = "trainer1";
 
-        when(tokenService.isValidToken(username, token)).thenReturn(true);
         when(trainingService.getTraineeTrainings(eq(username), any(TraineeTrainingRequest.class)))
                 .thenReturn(trainingResponses);
 
         // When
         ResponseEntity<List<TraineeTrainingResponse>> result =
-                traineeController.getTraineeTrainings(username, from, null, trainerName, null, token);
+                traineeController.getTraineeTrainings(username, from, null, trainerName, null);
 
         // Then
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertEquals(trainingResponses, result.getBody());
-        verify(tokenService).isValidToken(username, token);
         verify(trainingService).getTraineeTrainings(eq(username), any(TraineeTrainingRequest.class));
     }
 
@@ -402,13 +263,12 @@ class TraineeControllerTest {
         String token = "valid-token";
         List<TraineeTrainingResponse> emptyResponse = Arrays.asList();
 
-        when(tokenService.isValidToken(username, token)).thenReturn(true);
         when(trainingService.getTraineeTrainings(eq(username), any(TraineeTrainingRequest.class)))
                 .thenReturn(emptyResponse);
 
         // When
         ResponseEntity<List<TraineeTrainingResponse>> result =
-                traineeController.getTraineeTrainings(username, null, null, null, null, token);
+                traineeController.getTraineeTrainings(username, null, null, null, null);
 
         // Then
         assertEquals(HttpStatus.OK, result.getStatusCode());

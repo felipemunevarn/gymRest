@@ -167,7 +167,7 @@ class TrainerMapperTest {
                 .build();
 
         // When
-        TrainerRegistrationResponse response = trainerMapper.toTrainerRegistrationResponse(trainer);
+        TrainerRegistrationResponse response = trainerMapper.toTrainerRegistrationResponse(trainer,"password","jwt");
 
         // Then
         assertNotNull(response);
@@ -178,7 +178,7 @@ class TrainerMapperTest {
     @Test
     void toTrainerRegistrationResponse_withNullTrainer_shouldReturnNull() {
         // When
-        TrainerRegistrationResponse response = trainerMapper.toTrainerRegistrationResponse(null);
+        TrainerRegistrationResponse response = trainerMapper.toTrainerRegistrationResponse(null,"password","jwt");
 
         // Then
         assertNull(response);

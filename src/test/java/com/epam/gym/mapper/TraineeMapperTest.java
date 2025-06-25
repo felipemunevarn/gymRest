@@ -241,7 +241,7 @@ class TraineeMapperTest {
     @DisplayName("Should convert trainee to registration response successfully")
     void toTraineeRegistrationResponse_Success() {
         // When
-        TraineeRegistrationResponse result = traineeMapper.toTraineeRegistrationResponse(mockTrainee);
+        TraineeRegistrationResponse result = traineeMapper.toTraineeRegistrationResponse(mockTrainee,"password","jwt");
 
         // Then
         assertNotNull(result);
@@ -253,7 +253,7 @@ class TraineeMapperTest {
     @DisplayName("Should return null when trainee is null for registration response")
     void toTraineeRegistrationResponse_NullTrainee() {
         // When
-        TraineeRegistrationResponse result = traineeMapper.toTraineeRegistrationResponse(null);
+        TraineeRegistrationResponse result = traineeMapper.toTraineeRegistrationResponse(null,"","jwt");
 
         // Then
         assertNull(result);
@@ -272,7 +272,7 @@ class TraineeMapperTest {
 
         // When & Then
         assertThrows(NullPointerException.class,
-                () -> traineeMapper.toTraineeRegistrationResponse(mockTrainee));
+                () -> traineeMapper.toTraineeRegistrationResponse(mockTrainee,"password","jwt"));
     }
 
     @Test
