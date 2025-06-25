@@ -1,7 +1,8 @@
 package com.epam.gym.config;
 
-import com.epam.gym.security.filter.AuthTokenFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,14 +17,19 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 
+import javax.crypto.SecretKey;
 import javax.sql.DataSource;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -34,15 +40,27 @@ import java.util.Map;
 @EnableWebSecurity
 public class WebSecurityConfig {
 
+    private String SECRET = "870fc857a079157a69c5c03a8788a0c4721d90f8fe35476d1bce3609fc2ede4f";
+
     @Autowired
     private DataSource dataSource;
 
-    @Autowired
-    private AuthTokenFilter jwtAuthenticationFilter;
+    @Bean
+    public SecretKey jwtSecretKey() {
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET));
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public JwtDecoder jwtDecoder() {
+        SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET));
+        return NimbusJwtDecoder.withSecretKey(key)
+                .macAlgorithm(MacAlgorithm.HS256)
+                .build();
     }
 
     @Bean
@@ -67,23 +85,21 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/v1/training-types/").permitAll()
 
                         // Specific role restrictions - must come BEFORE /api/v1/**
-//                        .requestMatchers("/api/v1/trainees/**").hasRole("TRAINEE")
-//                        .requestMatchers("/api/v1/trainers/**").hasRole("TRAINER")
-
-                        // Endpoints accessible to USER or ADMIN
-//                        .requestMatchers("/api/v1/auth/**",
-//                                "/api/v1/trainings",
-//                                "/api/v1/training-types").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/v1/trainees/**").hasRole("TRAINEE")
+                        .requestMatchers("/api/v1/trainers/**").hasRole("TRAINER")
 
                         // General admin restriction (must come last)
-//                        .requestMatchers("/api/v1/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/**").hasRole("ADMIN")
 
                         // All other requests require authentication
                         .anyRequest().authenticated()
                 )
 
-                // JWT authentication
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
+                        )
+                )
 
                 // Session management
                 .sessionManagement(session -> session
@@ -139,8 +155,8 @@ public class WebSecurityConfig {
                 "http://localhost:3000",    // React dev server
                 "http://localhost:4200",    // Angular dev server
                 "http://localhost:8080",    // Vue dev server
-                "https://yourdomain.com",   // Production frontend
-                "https://*.yourdomain.com"  // Subdomains
+                "https://anydomain.com",   // Production frontend
+                "https://*.anydomain.com"  // Subdomains
         ));
 
         // Allow specific HTTP methods
@@ -202,5 +218,16 @@ public class WebSecurityConfig {
         errorResponse.put("message", message);
         errorResponse.put("path", path);
         return errorResponse;
+    }
+
+    @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
+        authoritiesConverter.setAuthorityPrefix("ROLE_");
+        authoritiesConverter.setAuthoritiesClaimName("roles");
+
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
+        return converter;
     }
 }
