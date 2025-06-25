@@ -1,6 +1,7 @@
 package com.epam.gym.security.filter;
 
 import com.epam.gym.security.util.JwtUtil;
+import com.epam.gym.service.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,11 +25,13 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     @Autowired
     private UserDetailsService userDetailsService;
 
+    @Autowired
+    private TokenBlacklistService tokenBlacklistService;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
+                                    FilterChain filterChain) throws ServletException, IOException {
 
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
@@ -41,6 +44,13 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
                 UserDetails ud = userDetailsService.loadUserByUsername(username);
                 if (jwtUtil.isValid(token, ud.getUsername())) {
+
+                    if (tokenBlacklistService.isTokenBlacklisted(token)) {
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.getWriter().write("Token has been invalidated");
+                        return;
+                    }
+
                     UsernamePasswordAuthenticationToken auth =
                             new UsernamePasswordAuthenticationToken(
                                     ud, null, ud.getAuthorities());

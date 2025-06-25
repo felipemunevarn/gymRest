@@ -2,6 +2,7 @@ package com.epam.gym.controller;
 
 import com.epam.gym.dto.ChangePasswordRequest;
 import com.epam.gym.dto.LoginRequest;
+import com.epam.gym.dto.MessageResponse;
 import com.epam.gym.entity.User;
 import com.epam.gym.exception.InvalidTokenException;
 import com.epam.gym.exception.LockedException;
@@ -9,6 +10,7 @@ import com.epam.gym.repository.UserRepository;
 import com.epam.gym.security.util.JwtUtil;
 import com.epam.gym.service.AuthService;
 import com.epam.gym.service.LoginAttemptService;
+import com.epam.gym.service.TokenBlacklistService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,7 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
     private final LoginAttemptService loginAttemptService;
+    private final TokenBlacklistService tokenBlacklistService;
     private final UserRepository userRepository;
 
     @Autowired
@@ -38,12 +41,14 @@ public class AuthController {
                           JwtUtil jwtUtil,
                           AuthenticationManager authenticationManager,
                           LoginAttemptService loginAttemptService,
+                          TokenBlacklistService tokenBlacklistService,
                           UserRepository userRepository
     ) {
         this.authService = authService;
         this.jwtUtil = jwtUtil;
         this.authenticationManager = authenticationManager;
         this.loginAttemptService = loginAttemptService;
+        this.tokenBlacklistService = tokenBlacklistService;
         this.userRepository = userRepository;
     }
 
@@ -70,7 +75,6 @@ public class AuthController {
                 } else {
 
                     if (loginAttemptService.isLockExpired(username)) {
-                        System.out.println(" -- Lock expired, unlocking " + username);
                         User unlocked = user.toBuilder()
                                 .isActive(true)
                                 .build();
@@ -138,31 +142,40 @@ public class AuthController {
      */
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request) {
-        String header = request.getHeader("Authorization");
+        try {
+            // Extract token from Authorization header
+            String token = extractTokenFromRequest(request);
 
-        if (header != null && header.startsWith("Bearer ")) {
-            String token = header.substring(7);
+            if (token == null) {
+                return ResponseEntity.badRequest()
+                        .body(new MessageResponse("No token provided"));
+            }
+            String username = jwtUtil.extractUsername(token);
+            // Validate token before blacklisting (optional but recommended)
+            if (!jwtUtil.isValid(token, username)) {
+                return ResponseEntity.badRequest()
+                        .body(new MessageResponse("Invalid token"));
+            }
+
+            // Blacklist the token
+            tokenBlacklistService.blacklistToken(token);
+
+            return ResponseEntity.ok()
+                    .body(new MessageResponse("Successfully logged out"));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new MessageResponse("Logout failed: " + e.getMessage()));
         }
-
-        return ResponseEntity.ok("Logged out successfully.");
     }
 
-//    /**
-//     * Validates the provided token and returns its status and associated username if valid.
-//     *
-//     * @param token The authentication token to validate.
-//     * @return ResponseEntity with TokenValidationResponse and HTTP status OK if valid,
-//     * or HTTP status UNAUTHORIZED if invalid.
-//     */
-//    @GetMapping("/validate")
-//    public ResponseEntity<TokenValidationResponse> validateToken(@RequestHeader("X-Auth-Token") String token) {
-//        if (tokenService.isValidToken(tokenService.getUsername(token),token)) {
-//            String username = tokenService.getUsername(token);
-//            TokenValidationResponse response = new TokenValidationResponse(true, username);
-//            return ResponseEntity.ok(response);
-//        } else {
-//            TokenValidationResponse response = new TokenValidationResponse(false, null);
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-//        }
-//    }
+    private String extractTokenFromRequest(HttpServletRequest request) {
+        String headerAuth = request.getHeader("Authorization");
+
+        if (headerAuth != null && headerAuth.startsWith("Bearer ")) {
+            return headerAuth.substring(7); // Remove "Bearer " prefix
+        }
+
+        return null;
+    }
 }

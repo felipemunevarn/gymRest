@@ -72,24 +72,29 @@ public class WebSecurityConfig {
 
                 // Authorization rules
                 .authorizeHttpRequests(authz -> authz
+                        .requestMatchers("/api/v1/auth/login").permitAll()
+                        .requestMatchers("/api/v1/auth/logout").permitAll()
+                        .requestMatchers("/api/v1/training-types/**").permitAll()
+
+                        .requestMatchers(HttpMethod.POST,"/api/v1/trainees/").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/v1/trainers/").permitAll()
+
                         // Public endpoints - no authentication required
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/health", "/api/actuator/**").permitAll()
-                        .requestMatchers("/swagger-ui/**",
-                                "/v3/api-docs/**").permitAll()
-                        .requestMatchers(HttpMethod.POST,
-                        "/api/v1/trainees/",
-                                 "/api/v1/trainers/").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
-                        .requestMatchers("/api/v1/auth/login").permitAll()
-                        .requestMatchers("/api/v1/training-types/").permitAll()
+                        // Specific role restrictions
+                        .requestMatchers(HttpMethod.GET, "/api/v1/trainees/**").hasRole("TRAINEE")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/trainees/**").hasRole("TRAINEE")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/trainees/**").hasRole("TRAINEE")
 
-                        // Specific role restrictions - must come BEFORE /api/v1/**
-                        .requestMatchers("/api/v1/trainees/**").hasRole("TRAINEE")
-                        .requestMatchers("/api/v1/trainers/**").hasRole("TRAINER")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/trainers/**").hasRole("TRAINER")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/trainers/**").hasRole("TRAINER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/trainers/**").hasRole("TRAINER")
 
-                        // General admin restriction (must come last)
-                        .requestMatchers("/api/v1/**").hasRole("ADMIN")
+                        // General admin restriction
+                        .requestMatchers(HttpMethod.DELETE,"/api/v1/**").hasRole("ADMIN")
 
                         // All other requests require authentication
                         .anyRequest().authenticated()

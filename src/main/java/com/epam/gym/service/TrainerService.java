@@ -64,8 +64,6 @@ public class TrainerService {
 
         String password = usernamePasswordUtil.generatePassword();
 
-        String token = jwtUtil.generateToken(username,
-                password);
 
         User user = new User.Builder()
                 .firstName(request.firstName())
@@ -89,6 +87,7 @@ public class TrainerService {
 
         try {
             trainerRepository.save(trainer);
+            String token = jwtUtil.generateToken(username, password);
             log.info("Trainer {} created successfully with ID: {}", user.getUsername(), trainer.getId());
             return trainerMapper.toTrainerRegistrationResponse(trainer, password, token);
         } catch (Exception e) {

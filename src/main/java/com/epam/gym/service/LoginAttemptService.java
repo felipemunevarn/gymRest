@@ -13,7 +13,7 @@ public class LoginAttemptService {
 
     private static final Logger log = LoggerFactory.getLogger(TraineeService.class);
     private static final int MAX_ATTEMPTS = 3;
-    private static final long LOCK_DURATION_MINUTES = 1;
+    private static final long LOCK_DURATION_MINUTES = 5 ;
 
     private final Map<String, Integer> attempts = new ConcurrentHashMap<>();
     private final Map<String, LocalDateTime> lockTimestamps = new ConcurrentHashMap<>();
