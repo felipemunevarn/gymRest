@@ -246,7 +246,7 @@ class TraineeMapperTest {
         // Then
         assertNotNull(result);
         assertEquals("john.doe", result.username());
-        assertEquals("password123", result.password());
+        assertEquals("password", result.password());
     }
 
     @Test

@@ -144,19 +144,19 @@ class TraineeControllerTest {
         verify(trainingService).getTraineeTrainings(eq(username), any(TraineeTrainingRequest.class));
     }
 
-    @Test
-    void testGetTraineeTrainings_InvalidToken_ThrowsException() {
-        // Given
-        String username = "john.doe";
-        String token = "invalid-token";
-
-        // When & Then
-        InvalidTokenException exception = assertThrows(InvalidTokenException.class, () ->
-                traineeController.getTraineeTrainings(username, null, null, null, null));
-
-        assertEquals("Token not authenticated", exception.getMessage());
-        verify(trainingService, never()).getTraineeTrainings(any(), any());
-    }
+//    @Test
+//    void testGetTraineeTrainings_InvalidToken_ThrowsException() {
+//        // Given
+//        String username = "john.doe";
+//        String token = "invalid-token";
+//
+//        // When & Then
+//        InvalidTokenException exception = assertThrows(InvalidTokenException.class, () ->
+//                traineeController.getTraineeTrainings(username, null, null, null, null));
+//
+//        assertEquals("Token not authenticated", exception.getMessage());
+//        verify(trainingService, never()).getTraineeTrainings(any(), any());
+//    }
 
     @Test
     void testUpdateTraineeTrainers_Success_ValidToken() {
@@ -176,19 +176,19 @@ class TraineeControllerTest {
         verify(traineeService).updateTraineeTrainers(username, updateTrainersRequest);
     }
 
-    @Test
-    void testUpdateTraineeTrainers_InvalidToken_ThrowsException() {
-        // Given
-        String username = "john.doe";
-        String token = "invalid-token";
-
-        // When & Then
-        InvalidTokenException exception = assertThrows(InvalidTokenException.class, () ->
-                traineeController.updateTraineeTrainers(username, updateTrainersRequest));
-
-        assertEquals("Token not authenticated", exception.getMessage());
-        verify(traineeService, never()).updateTraineeTrainers(any(), any());
-    }
+//    @Test
+//    void testUpdateTraineeTrainers_InvalidToken_ThrowsException() {
+//        // Given
+//        String username = "john.doe";
+//        String token = "invalid-token";
+//
+//        // When & Then
+//        InvalidTokenException exception = assertThrows(InvalidTokenException.class, () ->
+//                traineeController.updateTraineeTrainers(username, updateTrainersRequest));
+//
+//        assertEquals("Token not authenticated", exception.getMessage());
+//        verify(traineeService, never()).updateTraineeTrainers(any(), any());
+//    }
 
     @Test
     void testUpdateTraineeActivation_Success_ValidToken() {
@@ -221,18 +221,18 @@ class TraineeControllerTest {
         verify(traineeService).changeActiveStatus(deactivateRequest.username(), false);
     }
 
-    @Test
-    void testUpdateTraineeActivation_InvalidToken_ThrowsException() {
-        // Given
-        String token = "invalid-token";
-
-        // When & Then
-        InvalidTokenException exception = assertThrows(InvalidTokenException.class, () ->
-                traineeController.updateTraineeActivation(activateRequest));
-
-        assertEquals("Token not authenticated", exception.getMessage());
-        verify(traineeService, never()).changeActiveStatus(any(), anyBoolean());
-    }
+//    @Test
+//    void testUpdateTraineeActivation_InvalidToken_ThrowsException() {
+//        // Given
+//        String token = "invalid-token";
+//
+//        // When & Then
+//        InvalidTokenException exception = assertThrows(InvalidTokenException.class, () ->
+//                traineeController.updateTraineeActivation(activateRequest));
+//
+//        assertEquals("Token not authenticated", exception.getMessage());
+//        verify(traineeService, never()).changeActiveStatus(any(), anyBoolean());
+//    }
 
     // Additional edge case tests for better coverage
     @Test

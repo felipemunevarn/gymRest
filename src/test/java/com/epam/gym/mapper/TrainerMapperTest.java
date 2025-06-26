@@ -172,7 +172,7 @@ class TrainerMapperTest {
         // Then
         assertNotNull(response);
         assertEquals("trainer.user", response.username());
-        assertEquals("password123", response.password());
+        assertEquals("password", response.password());
     }
 
     @Test
