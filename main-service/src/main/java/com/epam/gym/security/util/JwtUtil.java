@@ -48,6 +48,18 @@ public class JwtUtil {
                 .compact();
     }
 
+    public String generateToken(String serviceName) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .subject(serviceName)
+                .claim("service", true)
+                .claim("roles", Arrays.asList("SERVICE"))
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusMillis(EXP_MS)))
+                .signWith(key, Jwts.SIG.HS256)
+                .compact();
+    }
+
     public boolean isValid(String token, String username) {
         return username.equals(extractUsername(token)) && !isExpired(token);
     }
