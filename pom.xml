@@ -12,7 +12,7 @@
     <modules>
         <module>main-service</module>
         <module>discovery-server</module>
-<!--        <module>trainer-workload-service</module>-->
+        <module>trainer-workload-service</module>
     </modules>
 
     <properties>
