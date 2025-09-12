@@ -7,6 +7,7 @@ import com.epam.gym.mapper.TraineeMapper;
 import com.epam.gym.mapper.TrainerMapper;
 import com.epam.gym.repository.TrainerRepository;
 import com.epam.gym.repository.TrainingTypeRepository;
+import com.epam.gym.security.util.JwtUtil;
 import com.epam.gym.util.UsernamePasswordUtil;
 import jakarta.persistence.NoResultException;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.*;
 
@@ -40,6 +42,12 @@ class TrainerServiceTest {
     @Mock
     private TraineeMapper traineeMapper;
 
+    @Mock
+    private JwtUtil jwtUtil;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private TrainerService trainerService;
 
@@ -50,6 +58,7 @@ class TrainerServiceTest {
     private TrainerUpdateRequest updateRequest;
     private TrainerRegistrationResponse registrationResponse;
     private TrainerProfileResponse profileResponse;
+    private TrainerRegistrationRequest request;
 
     @BeforeEach
     void setUp() {
@@ -84,7 +93,11 @@ class TrainerServiceTest {
                 false
         );
 
-        registrationResponse = new TrainerRegistrationResponse("john.trainer", "password123","jwt");
+        registrationResponse = new TrainerRegistrationResponse(
+                "john.trainer",
+                "password123",
+                "jwt");
+
         profileResponse = new TrainerProfileResponse(
                 "Jane",
                 "Smith",
@@ -92,49 +105,116 @@ class TrainerServiceTest {
                 false,
                 Collections.emptyList()
         );
+
+        request = new TrainerRegistrationRequest(
+                "John",
+                "Doe",
+                "STRENGTH");
+
+        passwordEncoder = mock(PasswordEncoder.class);
     }
 
-//    @Test
-//    void createTrainer_Success() {
-//        // Arrange
-//        when(usernamePasswordUtil.generateUsername("John", "Trainer")).thenReturn("john.trainer");
-//        when(usernamePasswordUtil.generatePassword()).thenReturn("password123");
-//        when(trainingTypeRepository.findByType(TrainingTypeEnum.FLEXIBILITY))
-//                .thenReturn(Optional.of(testTrainingType)); // Added mock for training type
-//        when(trainerRepository.save(any(Trainer.class))).thenReturn(testTrainer);
-//        when(trainerMapper.toTrainerRegistrationResponse(any(Trainer.class),"pass","jwt")).thenReturn(registrationResponse);
-//
-//        // Act
-//        TrainerRegistrationResponse result = trainerService.createTrainer(registrationRequest);
-//
-//        // Assert
-//        assertNotNull(result);
-//        assertEquals("john.trainer", result.username());
-//        assertEquals("password123", result.password());
-//        verify(trainingTypeRepository).findByType(TrainingTypeEnum.FLEXIBILITY);
-//        verify(trainerRepository).save(any(Trainer.class));
-//        verify(trainerMapper).toTrainerRegistrationResponse(any(Trainer.class),"pass","jwt");
-//    }
+    @Test
+    void createTrainer_Success() {
+        // given
+        TrainerRegistrationRequest request = new TrainerRegistrationRequest(
+                "John",
+                "Doe",
+                "STRENGTH");
+        String username = "john.doe";
+        String rawPassword = "plainPass";
+        String encodedPassword = "encodedPass";
+        String token = "jwt-token";
 
-//    @Test
-//    void createTrainer_ThrowsTraineeCreationException() {
-//        // Arrange
-//        when(usernamePasswordUtil.generateUsername("John", "Trainer")).thenReturn("john.trainer");
-//        when(usernamePasswordUtil.generatePassword()).thenReturn("password123");
-//        when(trainingTypeRepository.findByType(TrainingTypeEnum.FLEXIBILITY))
-//                .thenReturn(Optional.of(testTrainingType));
-//        when(trainerRepository.save(any(Trainer.class))).thenThrow(new RuntimeException("Database error"));
-//
-//        // Act & Assert
-//        NullPointerException exception = assertThrows(
-//                NullPointerException.class,
-//                () -> trainerService.createTrainer(registrationRequest)
-//        );
-//
-//        assertEquals("Failed to create trainer", exception.getMessage());
-//        verify(trainerRepository).save(any(Trainer.class));
-//        verify(trainerMapper, never()).toTrainerRegistrationResponse(any(Trainer.class),"pass","jwt");
-//    }
+        TrainingType trainingType = new TrainingType();
+
+        User user = new User.Builder()
+                .firstName("John")
+                .lastName("Doe")
+                .username(username)
+                .password(encodedPassword)
+                .isActive(true)
+                .role(User.Role.TRAINER)
+                .build();
+
+        Trainer trainer = new Trainer.Builder()
+                .trainingType(trainingType)
+                .user(user)
+                .build();
+
+        // mocks
+        when(usernamePasswordUtil.generateUsername("John", "Doe")).thenReturn(username);
+        when(usernamePasswordUtil.generatePassword()).thenReturn(rawPassword);
+        when(trainingTypeRepository.findByType(TrainingTypeEnum.STRENGTH))
+                .thenReturn(Optional.of(trainingType));
+        when(trainerRepository.save(any(Trainer.class))).thenReturn(trainer);
+        when(jwtUtil.generateToken(username, rawPassword)).thenReturn(token);
+
+        TrainerRegistrationResponse expectedResponse =
+                new TrainerRegistrationResponse(
+                        "John",
+                        "Doe",
+                        token);
+        when(trainerMapper.toTrainerRegistrationResponse(
+                any(Trainer.class),
+                eq("plainPass"),
+                eq("jwt-token")
+        )).thenReturn(expectedResponse);
+
+        // when
+        TrainerRegistrationResponse actualResponse = trainerService.createTrainer(request);
+
+        // then
+        assertNotNull(actualResponse);
+        assertEquals(expectedResponse, actualResponse);
+
+        verify(trainerRepository).save(any(Trainer.class));
+        verify(jwtUtil).generateToken(username, rawPassword);
+        verify(trainerMapper).toTrainerRegistrationResponse(
+                any(Trainer.class),
+                eq("plainPass"),
+                eq("jwt-token")
+        );
+    }
+
+    @Test
+    void createTrainer_TrainingTypeNotFound() {
+        // Arrange
+        when(usernamePasswordUtil.generateUsername("John", "Doe")).thenReturn("john.doe");
+        when(usernamePasswordUtil.generatePassword()).thenReturn("raw-pass");
+        when(trainingTypeRepository.findByType(any())).thenReturn(Optional.empty());
+
+        // Act + Assert
+        TraineeCreationException ex = assertThrows(
+                TraineeCreationException.class,
+                () -> trainerService.createTrainer(request)
+        );
+        assertEquals("Type not found", ex.getMessage());
+
+        verify(trainingTypeRepository).findByType(TrainingTypeEnum.STRENGTH);
+        verify(trainerRepository, never()).save(any());
+    }
+
+    @Test
+    void createTrainer_SaveFails() {
+        // Arrange
+        String username = "john.doe";
+        String password = "raw-pass";
+
+        TrainingType type = new TrainingType();
+
+        when(usernamePasswordUtil.generateUsername("John", "Doe")).thenReturn(username);
+        when(usernamePasswordUtil.generatePassword()).thenReturn(password);
+        when(trainingTypeRepository.findByType(TrainingTypeEnum.STRENGTH)).thenReturn(Optional.of(type));
+        when(trainerRepository.save(any(Trainer.class))).thenThrow(new RuntimeException("DB error"));
+
+        // Act + Assert
+        TraineeCreationException ex = assertThrows(
+                TraineeCreationException.class,
+                () -> trainerService.createTrainer(request)
+        );
+        assertEquals("Failed to create trainer", ex.getMessage());
+    }
 
     @Test
     void findTrainerByUsername_Success() {
