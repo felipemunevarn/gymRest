@@ -83,6 +83,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/health", "/api/actuator/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/actuator/**", "/api/v1/circuit-breaker/**").permitAll()
 
                         // Specific role restrictions
                         .requestMatchers(HttpMethod.GET, "/api/v1/trainees/**").hasRole("TRAINEE")

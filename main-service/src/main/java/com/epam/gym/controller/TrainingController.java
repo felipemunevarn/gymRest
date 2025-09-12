@@ -1,15 +1,13 @@
 package com.epam.gym.controller;
 
 import com.epam.gym.dto.TrainingRegistrationRequest;
+import com.epam.gym.exception.InvalidTokenException;
 import com.epam.gym.service.TrainingService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(value = "/api/v1/trainings")
@@ -28,6 +26,14 @@ public class TrainingController {
     ) {
         trainingService.createTraining(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @DeleteMapping("/{trainingId}")
+    public ResponseEntity<Void> deleteTrainee(
+            @PathVariable Long trainingId
+    ) {
+        trainingService.deleteTraining(trainingId);
+        return ResponseEntity.noContent().build();
     }
 
 }

@@ -1,5 +1,7 @@
 package com.epam.gym.service;
 
+import com.epam.gym.client.TrainerWorkloadClient;
+//import com.epam.gym.client.TrainerWorkloadClientFallback;
 import com.epam.gym.dto.*;
 import com.epam.gym.entity.*;
 import com.epam.gym.mapper.TrainingMapper;
@@ -7,11 +9,13 @@ import com.epam.gym.repository.TraineeRepository;
 import com.epam.gym.repository.TrainerRepository;
 import com.epam.gym.repository.TrainingRepository;
 import com.epam.gym.repository.TrainingTypeRepository;
+import com.epam.gym.security.util.JwtUtil;
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,19 +31,27 @@ public class TrainingService {
     private final TrainingTypeRepository trainingTypeRepository;
     private final TrainingMapper trainingMapper;
 
+    private final TrainerWorkloadClient trainerWorkloadClient;
+    private final JwtUtil jwtUtil;
+
+
     @Autowired
     public TrainingService(
             TrainingRepository trainingRepository,
             TrainingTypeRepository trainingTypeRepository,
             TrainingMapper trainingMapper,
             TraineeRepository traineeRepository,
-            TrainerRepository trainerRepository
+            TrainerRepository trainerRepository,
+            TrainerWorkloadClient trainerWorkloadClient,
+            JwtUtil jwtUtil
     ) {
         this.traineeRepository = traineeRepository;
         this.trainerRepository = trainerRepository;
         this.trainingRepository = trainingRepository;
         this.trainingTypeRepository = trainingTypeRepository;
         this.trainingMapper = trainingMapper;
+        this.trainerWorkloadClient = trainerWorkloadClient;
+        this.jwtUtil = jwtUtil;
     }
 
     @Transactional
@@ -71,10 +83,48 @@ public class TrainingService {
         try {
             trainingRepository.save(training);
             log.info("Training '{}' created successfully with ID: {}", request.name(), training.getId());
+
+            TrainerWorkloadRequest workloadRequest = TrainerWorkloadRequest.builder()
+                    .trainerUsername(trainer.getUser().getUsername())
+                    .trainerFirstName(trainer.getUser().getFirstName())
+                    .trainerLastName(trainer.getUser().getLastName())
+                    .isActive(trainer.getUser().isActive())
+                    .trainingDate(training.getDate())
+                    .trainingDuration(training.getDuration())
+                    .actionType(TrainerWorkloadRequest.ActionType.ADD)
+                    .build();
+
+            String token = "Bearer " + jwtUtil.generateToken("main-service");
+            ResponseEntity<Void> response = trainerWorkloadClient.updateTrainerWorkload(workloadRequest, token);
         } catch (Exception e) {
             log.error("Failed to save training: {}", e.getMessage(), e);
         }
     }
+
+    @Transactional
+    public void deleteTraining(Long trainingId) {
+        Training training = trainingRepository.findById(trainingId)
+                .orElseThrow(() -> new NoResultException("Training not found"));
+
+        trainingRepository.delete(training);
+        log.info("Training with ID {} deleted successfully", trainingId);
+
+        Trainer trainer = training.getTrainer();
+
+        TrainerWorkloadRequest workloadRequest = TrainerWorkloadRequest.builder()
+                .trainerUsername(trainer.getUser().getUsername())
+                .trainerFirstName(trainer.getUser().getFirstName())
+                .trainerLastName(trainer.getUser().getLastName())
+                .isActive(trainer.getUser().isActive())
+                .trainingDate(training.getDate())
+                .trainingDuration(training.getDuration())
+                .actionType(TrainerWorkloadRequest.ActionType.DELETE)
+                .build();
+
+        String token = "Bearer " + jwtUtil.generateToken("main-service");
+        ResponseEntity<Void> response = trainerWorkloadClient.updateTrainerWorkload(workloadRequest, token);
+    }
+
 
     @Transactional
     public List<TraineeTrainingResponse> getTraineeTrainings(

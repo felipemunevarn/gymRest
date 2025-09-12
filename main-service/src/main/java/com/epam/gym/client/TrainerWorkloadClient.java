@@ -7,7 +7,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
-@FeignClient(name = "trainer-workload-service", fallback = TrainerWorkloadClientFallback.class)
+@FeignClient(name = "trainer-workload-service",
+        fallback = TrainerWorkloadClientFallback.class)
 public interface TrainerWorkloadClient {
 
     @PostMapping("/api/v1/trainers/workload")

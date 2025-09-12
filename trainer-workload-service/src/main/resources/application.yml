@@ -25,7 +25,7 @@ management:
 
 # JWT Configuration
 jwt:
-  secret: mySecretKey123456789012345678901234567890
+  secret: 870fc857a079157a69c5c03a8788a0c4721d90f8fe35476d1bce3609fc2ede4f
   expiration: 86400000
 
 # Logging Configuration
