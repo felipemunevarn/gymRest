@@ -121,6 +121,26 @@ public class TrainerWorkloadService {
     }
 
     /**
+     * Get trainer workload for specific month
+     */
+    public Integer getTrainerWorkloadMonth(String trainerUsername,
+                                       String transactionId,
+                                       int year,
+                                       int month) {
+        log.info("Retrieving workload in {} of {} for trainer: {} [TransactionId: {}]",
+                year, month, trainerUsername, transactionId);
+
+        TrainerWorkload trainerWorkload = trainerWorkloads.get(trainerUsername);
+
+        if (trainerWorkload == null) {
+            log.warn("Trainer was not found: {} [TransactionId: {}]", trainerUsername, transactionId);
+            return null;
+        }
+
+        return trainerWorkload.getMonthlyDuration(year, month);
+    }
+
+    /**
      * Get all trainer usernames (for testing/debugging purposes)
      */
     public List<String> getAllTrainerUsernames() {

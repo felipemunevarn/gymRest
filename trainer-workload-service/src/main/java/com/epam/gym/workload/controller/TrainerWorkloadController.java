@@ -40,11 +40,6 @@ public class TrainerWorkloadController {
                 "TransactionId: {}, Request: {}", transactionId, request);
 
         try {
-            // Operation level logging
-            log.debug("OPERATION - Processing workload request for trainer: {}, " +
-                            "Action: {}, TransactionId: {}",
-                    request.getTrainerUsername(), request.getActionType(), transactionId);
-
             // Process the workload
             trainerWorkloadService.processWorkload(request, transactionId);
 
@@ -89,10 +84,6 @@ public class TrainerWorkloadController {
                 "TransactionId: {}, Username: {}", username, transactionId, username);
 
         try {
-            // Operation level logging
-            log.debug("OPERATION - Retrieving workload for trainer: {}, TransactionId: {}",
-                    username, transactionId);
-
             // Get the workload summary
             WorkloadSummary summary = trainerWorkloadService.getTrainerWorkload(username, transactionId);
 
@@ -111,6 +102,56 @@ public class TrainerWorkloadController {
                     transactionId, username);
 
             return ResponseEntity.ok(summary);
+
+        } catch (Exception e) {
+            // Transaction level logging - Error response
+            log.error("TRANSACTION_END - Endpoint: GET /api/v1/trainers/{}/workload, " +
+                            "TransactionId: {}, Status: 500 INTERNAL_SERVER_ERROR, Message: {}",
+                    username, transactionId, e.getMessage(), e);
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Get trainer workload in a specific month
+     * GET /api/v1/trainers/{username}/workload/{year}&{month}
+     */
+    @GetMapping("/{username}/workload/{year}/{month}")
+    public ResponseEntity<Integer> getTrainerWorkloadMonth(
+            @PathVariable String username,
+            @PathVariable int year,
+            @PathVariable int month,
+            HttpServletRequest httpRequest) {
+
+        String transactionId = TransactionUtil.generateTransactionId();
+
+        // Transaction level logging - Request received
+        log.info("TRANSACTION_START - Endpoint: GET /api/v1/trainers/{}/workload/{}/{}, " +
+                "TransactionId: {}, Username: {}, Year: {}, Month: {}", username, year, month, transactionId, username, year, month);
+
+        try {
+            // Get the workload summary
+            Integer total = (int) trainerWorkloadService.getTrainerWorkloadMonth(username,
+                    transactionId,
+                    year,
+                    month);
+
+            if (total == null) {
+                // Transaction level logging - Not found response
+                log.info("TRANSACTION_END - Endpoint: GET /api/v1/trainers/{}/workload, " +
+                                "TransactionId: {}, Status: 404 NOT_FOUND, Message: Trainer not found",
+                        transactionId, username);
+
+                return ResponseEntity.notFound().build();
+            }
+
+            // Transaction level logging - Success response
+            log.info("TRANSACTION_END - Endpoint: GET /api/v1/trainers/{}/workload, " +
+                            "TransactionId: {}, Status: 200 OK, Message: Workload retrieved successfully",
+                    transactionId, username);
+
+            return ResponseEntity.ok(total);
 
         } catch (Exception e) {
             // Transaction level logging - Error response
