@@ -22,7 +22,7 @@ A comprehensive **Spring Cloud** microservices architecture for managing gym ope
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Eureka Service Registry                   │
+│                    Eureka Service Registry                  │
 │                     (localhost:8761)                        │
 └─────────────────────────────────────────────────────────────┘
                               │
@@ -130,7 +130,7 @@ mvn clean install
 **Option A: Using Maven**
 ```bash
 # Terminal 1: Start Eureka Registry
-cd eureka-server
+cd discovery-server
 mvn spring-boot:run
 
 # Terminal 2: Start Main Service (wait for Eureka to be up)
@@ -148,7 +148,7 @@ mvn spring-boot:run
 mvn clean package
 
 # Start services
-java -jar eureka-server/target/eureka-server.jar
+java -jar eureka-server/target/discovery-server.jar
 java -jar main-service/target/main-service.jar
 java -jar trainer-workload-service/target/trainer-workload-service.jar
 ```
