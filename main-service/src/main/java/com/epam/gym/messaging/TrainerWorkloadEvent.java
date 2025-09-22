@@ -34,6 +34,10 @@ public class TrainerWorkloadEvent {
         this.payload = payload;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     // Getters and Setters
     public String getMessageId() { return messageId; }
     public void setMessageId(String messageId) { this.messageId = messageId; }
@@ -49,6 +53,44 @@ public class TrainerWorkloadEvent {
 
     public TrainerWorkloadPayload getPayload() { return payload; }
     public void setPayload(TrainerWorkloadPayload payload) { this.payload = payload; }
+
+    // Builder
+    public static class Builder {
+        private String messageId;
+        private String messageType;
+        private LocalDateTime timestamp;
+        private String source;
+        private TrainerWorkloadPayload payload;
+
+        public Builder messageId(String messageId) {
+            this.messageId = messageId;
+            return this;
+        }
+
+        public Builder messageType(String messageType) {
+            this.messageType = messageType;
+            return this;
+        }
+
+        public Builder timestamp(LocalDateTime timestamp) {
+            this.timestamp = timestamp;
+            return this;
+        }
+
+        public Builder source(String source) {
+            this.source = source;
+            return this;
+        }
+
+        public Builder payload(TrainerWorkloadPayload payload) {
+            this.payload = payload;
+            return this;
+        }
+
+        public TrainerWorkloadEvent build() {
+            return new TrainerWorkloadEvent(messageId, messageType, timestamp, source, payload);
+        }
+    }
 
     // Inner class
     public static class TrainerWorkloadPayload {
@@ -72,7 +114,8 @@ public class TrainerWorkloadEvent {
         @NotNull
         private ActionType actionType;
 
-        public TrainerWorkloadPayload() {}
+        public TrainerWorkloadPayload() {
+        }
 
         public TrainerWorkloadPayload(String trainerUsername, String trainerFirstName, String trainerLastName,
                                       boolean isActive, LocalDate trainingDate, Integer trainingDuration, ActionType actionType) {
@@ -85,30 +128,124 @@ public class TrainerWorkloadEvent {
             this.actionType = actionType;
         }
 
+        public static Builder builder() {
+            return new TrainerWorkloadPayload.Builder();
+        }
+
         // Getters and Setters
-        public String getTrainerUsername() { return trainerUsername; }
-        public void setTrainerUsername(String trainerUsername) { this.trainerUsername = trainerUsername; }
+        public String getTrainerUsername() {
+            return trainerUsername;
+        }
 
-        public String getTrainerFirstName() { return trainerFirstName; }
-        public void setTrainerFirstName(String trainerFirstName) { this.trainerFirstName = trainerFirstName; }
+        public void setTrainerUsername(String trainerUsername) {
+            this.trainerUsername = trainerUsername;
+        }
 
-        public String getTrainerLastName() { return trainerLastName; }
-        public void setTrainerLastName(String trainerLastName) { this.trainerLastName = trainerLastName; }
+        public String getTrainerFirstName() {
+            return trainerFirstName;
+        }
 
-        public boolean isActive() { return isActive; }
-        public void setActive(boolean active) { isActive = active; }
+        public void setTrainerFirstName(String trainerFirstName) {
+            this.trainerFirstName = trainerFirstName;
+        }
 
-        public LocalDate getTrainingDate() { return trainingDate; }
-        public void setTrainingDate(LocalDate trainingDate) { this.trainingDate = trainingDate; }
+        public String getTrainerLastName() {
+            return trainerLastName;
+        }
 
-        public Integer getTrainingDuration() { return trainingDuration; }
-        public void setTrainingDuration(Integer trainingDuration) { this.trainingDuration = trainingDuration; }
+        public void setTrainerLastName(String trainerLastName) {
+            this.trainerLastName = trainerLastName;
+        }
 
-        public ActionType getActionType() { return actionType; }
-        public void setActionType(ActionType actionType) { this.actionType = actionType; }
+        public boolean isActive() {
+            return isActive;
+        }
+
+        public void setActive(boolean active) {
+            isActive = active;
+        }
+
+        public LocalDate getTrainingDate() {
+            return trainingDate;
+        }
+
+        public void setTrainingDate(LocalDate trainingDate) {
+            this.trainingDate = trainingDate;
+        }
+
+        public Integer getTrainingDuration() {
+            return trainingDuration;
+        }
+
+        public void setTrainingDuration(Integer trainingDuration) {
+            this.trainingDuration = trainingDuration;
+        }
+
+        public ActionType getActionType() {
+            return actionType;
+        }
+
+        public void setActionType(ActionType actionType) {
+            this.actionType = actionType;
+        }
 
         public enum ActionType {
             ADD, DELETE
+        }
+
+        // Builder
+        public static class Builder {
+            private String trainerUsername;
+            private String trainerFirstName;
+            private String trainerLastName;
+            private boolean isActive;
+            private LocalDate trainingDate;
+            private Integer trainingDuration;
+            private ActionType actionType;
+
+            public Builder trainerUsername(String trainerUsername) {
+                this.trainerUsername = trainerUsername;
+                return this;
+            }
+
+            public Builder trainerFirstName(String trainerFirstName) {
+                this.trainerFirstName = trainerFirstName;
+                return this;
+            }
+
+            public Builder trainerLastName(String trainerLastName) {
+                this.trainerLastName = trainerLastName;
+                return this;
+            }
+
+            public Builder isActive(boolean isActive) {
+                this.isActive = isActive;
+                return this;
+            }
+
+            public Builder trainingDate(LocalDate trainingDate) {
+                this.trainingDate = trainingDate;
+                return this;
+            }
+
+            public Builder trainingDuration(Integer trainingDuration) {
+                this.trainingDuration = trainingDuration;
+                return this;
+            }
+
+            public Builder actionType(ActionType actionType) {
+                this.actionType = actionType;
+                return this;
+            }
+
+            public TrainerWorkloadPayload build() {
+                return new TrainerWorkloadPayload(trainerUsername, trainerFirstName, trainerLastName,
+                        isActive, trainingDate, trainingDuration, actionType);
+            }
+
+//            public static TrainerWorkloadPayload.Builder builder() {
+//
+//            }
         }
     }
 }

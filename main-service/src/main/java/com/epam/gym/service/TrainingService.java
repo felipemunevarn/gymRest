@@ -5,6 +5,8 @@ import com.epam.gym.client.TrainerWorkloadClient;
 import com.epam.gym.dto.*;
 import com.epam.gym.entity.*;
 import com.epam.gym.mapper.TrainingMapper;
+import com.epam.gym.messaging.TrainerWorkloadEvent;
+import com.epam.gym.messaging.TrainerWorkloadMessageProducer;
 import com.epam.gym.repository.TraineeRepository;
 import com.epam.gym.repository.TrainerRepository;
 import com.epam.gym.repository.TrainingRepository;
@@ -34,6 +36,7 @@ public class TrainingService {
     private final TrainerWorkloadClient trainerWorkloadClient;
     private final JwtUtil jwtUtil;
 
+    private TrainerWorkloadMessageProducer trainerWorkloadMessageProducer;
 
     @Autowired
     public TrainingService(
@@ -43,7 +46,8 @@ public class TrainingService {
             TraineeRepository traineeRepository,
             TrainerRepository trainerRepository,
             TrainerWorkloadClient trainerWorkloadClient,
-            JwtUtil jwtUtil
+            JwtUtil jwtUtil,
+            TrainerWorkloadMessageProducer trainerWorkloadMessageProducer
     ) {
         this.traineeRepository = traineeRepository;
         this.trainerRepository = trainerRepository;
@@ -52,6 +56,7 @@ public class TrainingService {
         this.trainingMapper = trainingMapper;
         this.trainerWorkloadClient = trainerWorkloadClient;
         this.jwtUtil = jwtUtil;
+        this.trainerWorkloadMessageProducer = trainerWorkloadMessageProducer;
     }
 
     @Transactional
@@ -94,8 +99,21 @@ public class TrainingService {
                     .actionType(TrainerWorkloadRequest.ActionType.ADD)
                     .build();
 
-            String token = "Bearer " + jwtUtil.generateToken("main-service");
-            ResponseEntity<Void> response = trainerWorkloadClient.updateTrainerWorkload(workloadRequest, token);
+//            String token = "Bearer " + jwtUtil.generateToken("main-service");
+//            ResponseEntity<Void> response = trainerWorkloadClient.updateTrainerWorkload(workloadRequest, token);
+
+            TrainerWorkloadEvent.TrainerWorkloadPayload payload = TrainerWorkloadEvent.TrainerWorkloadPayload.builder()
+                    .trainerUsername(trainer.getUser().getUsername())
+                    .trainerFirstName(trainer.getUser().getFirstName())
+                    .trainerLastName(trainer.getUser().getLastName())
+                    .isActive(trainer.getUser().isActive())
+                    .trainingDate(training.getDate())
+                    .trainingDuration(training.getDuration())
+                    .actionType(TrainerWorkloadEvent.TrainerWorkloadPayload.ActionType.ADD)
+                    .build();
+
+            trainerWorkloadMessageProducer.sendWorkloadUpdate(payload);
+
         } catch (Exception e) {
             log.error("Failed to save training: {}", e.getMessage(), e);
         }
