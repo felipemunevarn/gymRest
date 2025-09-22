@@ -4,6 +4,13 @@ server:
 spring:
   application:
     name: trainer-workload-service
+  artemis:
+    broker-url: tcp://localhost:61616
+    user: admin
+    password: admin
+  jms:
+    template:
+      delivery-mode: persistent
 
 eureka:
   client:
@@ -35,3 +42,7 @@ logging:
     org.springframework.cloud: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+app:
+  queue:
+    trainer-workload: trainer.workload.updates
