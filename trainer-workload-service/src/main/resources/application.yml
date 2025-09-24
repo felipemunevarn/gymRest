@@ -11,6 +11,11 @@ spring:
   jms:
     template:
       delivery-mode: persistent
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
 
 eureka:
   client:

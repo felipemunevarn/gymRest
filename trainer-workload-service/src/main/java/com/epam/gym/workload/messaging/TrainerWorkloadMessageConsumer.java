@@ -1,12 +1,16 @@
 package com.epam.gym.workload.messaging;
 
 import com.epam.gym.workload.dto.WorkloadRequest;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 import com.epam.gym.workload.service.TrainerWorkloadService;
+
+import java.time.LocalDate;
 
 @Component
 public class TrainerWorkloadMessageConsumer {
@@ -16,11 +20,21 @@ public class TrainerWorkloadMessageConsumer {
     @Autowired
     private TrainerWorkloadService trainerWorkloadService;
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     @JmsListener(destination = "${app.queue.trainer-workload}")
-    public void handleTrainerWorkloadUpdate(TrainerWorkloadEvent event) {
-        String transactionId = event.getMessageId();
+    public void handleTrainerWorkloadUpdate(String jsonMessage) throws JsonProcessingException {
+        TrainerWorkloadEvent event = null;
+        String transactionId = "unknown";
 
         try {
+
+            // DEBUG: Log the received JSON message
+            log.info("DEBUG: Received JSON message: {}", jsonMessage);
+
+            event = objectMapper.readValue(jsonMessage, TrainerWorkloadEvent.class);
+            transactionId = event.getMessageId();
+
             log.info("TRANSACTION_START - Message Consumer: TrainerWorkloadUpdate, " +
                             "MessageId: {}, TrainerUsername: {}, ActionType: {}",
                     transactionId,
@@ -67,7 +81,7 @@ public class TrainerWorkloadMessageConsumer {
                 .trainerFirstName(payload.getTrainerFirstName())
                 .trainerLastName(payload.getTrainerLastName())
                 .isActive(payload.isActive())
-                .trainingDate(payload.getTrainingDate())
+                .trainingDate(LocalDate.parse(payload.getTrainingDate()))
                 .trainingDuration(payload.getTrainingDuration())
                 .actionType(WorkloadRequest.ActionType.valueOf(payload.getActionType().name()))
                 .build();

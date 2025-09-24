@@ -1,5 +1,6 @@
 package com.epam.gym.messaging;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,9 @@ public class TrainerWorkloadMessageProducer {
     @Autowired
     private JmsTemplate jmsTemplate;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Value("${app.queue.trainer-workload}")
     private String trainerWorkloadQueue;
 
@@ -31,7 +35,12 @@ public class TrainerWorkloadMessageProducer {
                     .payload(payload)
                     .build();
 
-            jmsTemplate.convertAndSend(trainerWorkloadQueue, event);
+            String jsonMessage = objectMapper.writeValueAsString(event);
+
+            // DEBUG: Log the actual JSON being sent
+            log.info("DEBUG: Sending JSON message: {}", jsonMessage);
+
+            jmsTemplate.convertAndSend(trainerWorkloadQueue, jsonMessage);
 
             log.info("Trainer workload event sent successfully - MessageId: {}, TrainerUsername: {}, ActionType: {}",
                     event.getMessageId(),

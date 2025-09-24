@@ -33,7 +33,6 @@ public class TrainingService {
     private final TrainingTypeRepository trainingTypeRepository;
     private final TrainingMapper trainingMapper;
 
-    private final TrainerWorkloadClient trainerWorkloadClient;
     private final JwtUtil jwtUtil;
 
     private TrainerWorkloadMessageProducer trainerWorkloadMessageProducer;
@@ -54,7 +53,6 @@ public class TrainingService {
         this.trainingRepository = trainingRepository;
         this.trainingTypeRepository = trainingTypeRepository;
         this.trainingMapper = trainingMapper;
-        this.trainerWorkloadClient = trainerWorkloadClient;
         this.jwtUtil = jwtUtil;
         this.trainerWorkloadMessageProducer = trainerWorkloadMessageProducer;
     }
@@ -89,19 +87,6 @@ public class TrainingService {
             trainingRepository.save(training);
             log.info("Training '{}' created successfully with ID: {}", request.name(), training.getId());
 
-            TrainerWorkloadRequest workloadRequest = TrainerWorkloadRequest.builder()
-                    .trainerUsername(trainer.getUser().getUsername())
-                    .trainerFirstName(trainer.getUser().getFirstName())
-                    .trainerLastName(trainer.getUser().getLastName())
-                    .isActive(trainer.getUser().isActive())
-                    .trainingDate(training.getDate())
-                    .trainingDuration(training.getDuration())
-                    .actionType(TrainerWorkloadRequest.ActionType.ADD)
-                    .build();
-
-//            String token = "Bearer " + jwtUtil.generateToken("main-service");
-//            ResponseEntity<Void> response = trainerWorkloadClient.updateTrainerWorkload(workloadRequest, token);
-
             TrainerWorkloadEvent.TrainerWorkloadPayload payload = TrainerWorkloadEvent.TrainerWorkloadPayload.builder()
                     .trainerUsername(trainer.getUser().getUsername())
                     .trainerFirstName(trainer.getUser().getFirstName())
@@ -129,20 +114,18 @@ public class TrainingService {
 
         Trainer trainer = training.getTrainer();
 
-        TrainerWorkloadRequest workloadRequest = TrainerWorkloadRequest.builder()
+        TrainerWorkloadEvent.TrainerWorkloadPayload payload = TrainerWorkloadEvent.TrainerWorkloadPayload.builder()
                 .trainerUsername(trainer.getUser().getUsername())
                 .trainerFirstName(trainer.getUser().getFirstName())
                 .trainerLastName(trainer.getUser().getLastName())
                 .isActive(trainer.getUser().isActive())
                 .trainingDate(training.getDate())
                 .trainingDuration(training.getDuration())
-                .actionType(TrainerWorkloadRequest.ActionType.DELETE)
+                .actionType(TrainerWorkloadEvent.TrainerWorkloadPayload.ActionType.DELETE)
                 .build();
 
-        String token = "Bearer " + jwtUtil.generateToken("main-service");
-        ResponseEntity<Void> response = trainerWorkloadClient.updateTrainerWorkload(workloadRequest, token);
+        trainerWorkloadMessageProducer.sendWorkloadUpdate(payload);
     }
-
 
     @Transactional
     public List<TraineeTrainingResponse> getTraineeTrainings(
@@ -181,5 +164,4 @@ public class TrainingService {
         );
         return trainingMapper.mapTrainingsToTrainerDtoResponseList(trainings);
     }
-
 }

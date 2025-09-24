@@ -20,11 +20,11 @@ public class TrainerWorkloadEvent {
     private String messageId;
 
     @NotNull
-    private String messageType; // "TRAINER_WORKLOAD_UPDATE"
+    private String messageType;
 
     @NotNull
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime timestamp;
+//    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private String timestamp;
 
     @NotNull
     private String source; // "main-service"
@@ -47,8 +47,8 @@ public class TrainerWorkloadEvent {
         private boolean isActive;
 
         @NotNull
-        @JsonFormat(pattern = "yyyy-MM-dd")
-        private LocalDate trainingDate;
+//        @JsonFormat(pattern = "yyyy-MM-dd")
+        private String trainingDate;
 
         @NotNull
         private Integer trainingDuration;

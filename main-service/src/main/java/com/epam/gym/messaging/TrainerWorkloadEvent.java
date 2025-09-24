@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class TrainerWorkloadEvent {
 
@@ -15,8 +16,8 @@ public class TrainerWorkloadEvent {
     private String messageType;
 
     @NotNull
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime timestamp;
+//    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private String timestamp;
 
     @NotNull
     private String source;
@@ -26,7 +27,11 @@ public class TrainerWorkloadEvent {
 
     public TrainerWorkloadEvent() {}
 
-    public TrainerWorkloadEvent(String messageId, String messageType, LocalDateTime timestamp, String source, TrainerWorkloadPayload payload) {
+    public TrainerWorkloadEvent(String messageId,
+                                String messageType,
+                                String timestamp,
+                                String source,
+                                TrainerWorkloadPayload payload) {
         this.messageId = messageId;
         this.messageType = messageType;
         this.timestamp = timestamp;
@@ -45,8 +50,8 @@ public class TrainerWorkloadEvent {
     public String getMessageType() { return messageType; }
     public void setMessageType(String messageType) { this.messageType = messageType; }
 
-    public LocalDateTime getTimestamp() { return timestamp; }
-    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+    public String getTimestamp() { return timestamp; }
+    public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
 
     public String getSource() { return source; }
     public void setSource(String source) { this.source = source; }
@@ -58,7 +63,7 @@ public class TrainerWorkloadEvent {
     public static class Builder {
         private String messageId;
         private String messageType;
-        private LocalDateTime timestamp;
+        private String timestamp;
         private String source;
         private TrainerWorkloadPayload payload;
 
@@ -73,7 +78,7 @@ public class TrainerWorkloadEvent {
         }
 
         public Builder timestamp(LocalDateTime timestamp) {
-            this.timestamp = timestamp;
+            this.timestamp = timestamp.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
             return this;
         }
 
@@ -105,8 +110,8 @@ public class TrainerWorkloadEvent {
         private boolean isActive;
 
         @NotNull
-        @JsonFormat(pattern = "yyyy-MM-dd")
-        private LocalDate trainingDate;
+//        @JsonFormat(pattern = "yyyy-MM-dd")
+        private String trainingDate;
 
         @NotNull
         private Integer trainingDuration;
@@ -117,8 +122,13 @@ public class TrainerWorkloadEvent {
         public TrainerWorkloadPayload() {
         }
 
-        public TrainerWorkloadPayload(String trainerUsername, String trainerFirstName, String trainerLastName,
-                                      boolean isActive, LocalDate trainingDate, Integer trainingDuration, ActionType actionType) {
+        public TrainerWorkloadPayload(String trainerUsername,
+                                      String trainerFirstName,
+                                      String trainerLastName,
+                                      boolean isActive,
+                                      String trainingDate,
+                                      Integer trainingDuration,
+                                      ActionType actionType) {
             this.trainerUsername = trainerUsername;
             this.trainerFirstName = trainerFirstName;
             this.trainerLastName = trainerLastName;
@@ -165,11 +175,11 @@ public class TrainerWorkloadEvent {
             isActive = active;
         }
 
-        public LocalDate getTrainingDate() {
+        public String getTrainingDate() {
             return trainingDate;
         }
 
-        public void setTrainingDate(LocalDate trainingDate) {
+        public void setTrainingDate(String trainingDate) {
             this.trainingDate = trainingDate;
         }
 
@@ -199,7 +209,7 @@ public class TrainerWorkloadEvent {
             private String trainerFirstName;
             private String trainerLastName;
             private boolean isActive;
-            private LocalDate trainingDate;
+            private String trainingDate;
             private Integer trainingDuration;
             private ActionType actionType;
 
@@ -224,7 +234,7 @@ public class TrainerWorkloadEvent {
             }
 
             public Builder trainingDate(LocalDate trainingDate) {
-                this.trainingDate = trainingDate;
+                this.trainingDate = trainingDate.format(DateTimeFormatter.ISO_LOCAL_DATE);
                 return this;
             }
 
@@ -242,10 +252,6 @@ public class TrainerWorkloadEvent {
                 return new TrainerWorkloadPayload(trainerUsername, trainerFirstName, trainerLastName,
                         isActive, trainingDate, trainingDuration, actionType);
             }
-
-//            public static TrainerWorkloadPayload.Builder builder() {
-//
-//            }
         }
     }
 }
