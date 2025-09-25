@@ -1,7 +1,5 @@
 package com.epam.gym.service;
 
-import com.epam.gym.client.TrainerWorkloadClient;
-//import com.epam.gym.client.TrainerWorkloadClientFallback;
 import com.epam.gym.dto.*;
 import com.epam.gym.entity.*;
 import com.epam.gym.mapper.TrainingMapper;
@@ -17,7 +15,6 @@ import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -44,7 +41,6 @@ public class TrainingService {
             TrainingMapper trainingMapper,
             TraineeRepository traineeRepository,
             TrainerRepository trainerRepository,
-            TrainerWorkloadClient trainerWorkloadClient,
             JwtUtil jwtUtil,
             TrainerWorkloadMessageProducer trainerWorkloadMessageProducer
     ) {
