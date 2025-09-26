@@ -1,14 +1,10 @@
 package com.epam.gym.workload.messaging;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -23,11 +19,13 @@ public class TrainerWorkloadEvent {
     private String messageType;
 
     @NotNull
-//    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private String timestamp;
 
     @NotNull
-    private String source; // "main-service"
+    private String source;
+
+    @NotNull
+    private String authToken;
 
     @NotNull
     private TrainerWorkloadPayload payload;
@@ -47,7 +45,6 @@ public class TrainerWorkloadEvent {
         private boolean isActive;
 
         @NotNull
-//        @JsonFormat(pattern = "yyyy-MM-dd")
         private String trainingDate;
 
         @NotNull

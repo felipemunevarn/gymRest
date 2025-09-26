@@ -1,6 +1,5 @@
 package com.epam.gym.messaging;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
@@ -16,11 +15,12 @@ public class TrainerWorkloadEvent {
     private String messageType;
 
     @NotNull
-//    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private String timestamp;
 
     @NotNull
     private String source;
+
+    private String authToken;
 
     @NotNull
     private TrainerWorkloadPayload payload;
@@ -31,11 +31,13 @@ public class TrainerWorkloadEvent {
                                 String messageType,
                                 String timestamp,
                                 String source,
+                                String authToken,
                                 TrainerWorkloadPayload payload) {
         this.messageId = messageId;
         this.messageType = messageType;
         this.timestamp = timestamp;
         this.source = source;
+        this.authToken = authToken;
         this.payload = payload;
     }
 
@@ -56,6 +58,9 @@ public class TrainerWorkloadEvent {
     public String getSource() { return source; }
     public void setSource(String source) { this.source = source; }
 
+    public String getAuthToken() { return authToken; }
+    public void setAuthToken(String authToken) { this.authToken = authToken; }
+
     public TrainerWorkloadPayload getPayload() { return payload; }
     public void setPayload(TrainerWorkloadPayload payload) { this.payload = payload; }
 
@@ -65,6 +70,7 @@ public class TrainerWorkloadEvent {
         private String messageType;
         private String timestamp;
         private String source;
+        private String authToken;
         private TrainerWorkloadPayload payload;
 
         public Builder messageId(String messageId) {
@@ -92,8 +98,13 @@ public class TrainerWorkloadEvent {
             return this;
         }
 
+        public Builder authToken(String authToken) {
+            this.authToken = authToken;
+            return this;
+        }
+
         public TrainerWorkloadEvent build() {
-            return new TrainerWorkloadEvent(messageId, messageType, timestamp, source, payload);
+            return new TrainerWorkloadEvent(messageId, messageType, timestamp, source, authToken, payload);
         }
     }
 
@@ -110,7 +121,6 @@ public class TrainerWorkloadEvent {
         private boolean isActive;
 
         @NotNull
-//        @JsonFormat(pattern = "yyyy-MM-dd")
         private String trainingDate;
 
         @NotNull

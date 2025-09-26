@@ -1,5 +1,6 @@
 package com.epam.gym.messaging;
 
+import com.epam.gym.security.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,23 +23,39 @@ public class TrainerWorkloadMessageProducer {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
     @Value("${app.queue.trainer-workload}")
     private String trainerWorkloadQueue;
 
     public void sendWorkloadUpdate(TrainerWorkloadEvent.TrainerWorkloadPayload payload) {
         try {
+            // DEBUG: Check if JwtUtil is injected
+            if (jwtUtil == null) {
+                log.error("JwtUtil is NULL! Cannot generate authentication token.");
+                throw new IllegalStateException("JwtUtil not properly injected");
+            }
+
+            String token = jwtUtil.generateToken("main-service");
+
+            // DEBUG: Log the generated token
+            log.info("DEBUG: Generated JWT token: {}", token != null ? "Token generated successfully" : "Token is NULL");
+
             TrainerWorkloadEvent event = TrainerWorkloadEvent.builder()
                     .messageId(UUID.randomUUID().toString())
                     .messageType("TRAINER_WORKLOAD_UPDATE")
                     .timestamp(LocalDateTime.now())
                     .source("main-service")
+                    .authToken(token)
                     .payload(payload)
                     .build();
 
             String jsonMessage = objectMapper.writeValueAsString(event);
 
-            // DEBUG: Log the actual JSON being sent
+            // DEBUG: Check if authToken is in the JSON
             log.info("DEBUG: Sending JSON message: {}", jsonMessage);
+            log.info("DEBUG: AuthToken in event: {}", event.getAuthToken() != null ? "Present" : "NULL");
 
             jmsTemplate.convertAndSend(trainerWorkloadQueue, jsonMessage);
 
@@ -50,7 +67,7 @@ public class TrainerWorkloadMessageProducer {
         } catch (Exception e) {
             log.error("Failed to send trainer workload event for trainer: {}",
                     payload.getTrainerUsername(), e);
-            // In a real scenario, you might want to:
+            // Future:
             // 1. Store failed messages for retry
             // 2. Send to a dead letter queue
             // 3. Trigger an alert
