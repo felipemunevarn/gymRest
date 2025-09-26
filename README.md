@@ -1,6 +1,6 @@
 # 🏋️ Gym Management Microservices System
 
-A comprehensive **Spring Cloud** microservices architecture for managing gym operations. Built with **Spring Boot**, **Eureka Discovery**, **OpenFeign**, and **JWT Authentication**, this system provides scalable REST APIs for users, trainees, trainers, training management, and workload tracking.
+A comprehensive **async messaging-based** microservices architecture for managing gym operations. Built with **Spring Boot**, **ActiveMQ**, and **JWT Authentication**, this system provides scalable REST APIs for users, trainees, trainers, training management, and workload tracking with resilient asynchronous communication.
 
 ## 📋 Table of Contents
 
@@ -12,50 +12,54 @@ A comprehensive **Spring Cloud** microservices architecture for managing gym ope
 - [Service Configuration](#-service-configuration)
 - [API Documentation](#-api-documentation)
 - [Authentication & Security](#-authentication--security)
-- [Service Communication](#-service-communication)
+- [Async Messaging](#-async-messaging)
 - [Monitoring & Health Checks](#-monitoring--health-checks)
 - [Testing](#-testing)
 - [Deployment](#-deployment)
 - [Contributing](#-contributing)
 
-## 🏗️ Architecture Overview
+## 🗺️ Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Eureka Service Registry                  │
-│                     (localhost:8761)                        │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    ActiveMQ Message Broker                      │
+│                     (localhost:61616)                           │
+│               Web Console: localhost:8161                       │
+└─────────────────────────────────────────────────────────────────┘
                               │
-                    ┌─────────┼─────────┐
-                    │         │         │
-        ┌───────────▼──┐ ┌────▼────┐ ┌──▼────────────┐
-        │ Main Service │ │ Trainer │ │ Other Services│
-        │   (8080)     │ │Workload │ │   (8083+)     │
-        │              │ │(8082)   │ │               │
-        └──────────────┘ └─────────┘ └───────────────┘
-                │                │
-           ┌────▼────┐      ┌────▼────┐
-           │   H2    │      │   In    │
-           │Database │      │Memory DB│
-           └─────────┘      └─────────┘
+                              │ Async Messages
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+┌───────▼───────┐     ┌───────▼───────┐     ┌─────▼─────┐
+│ Main Service  │────▶│ Message Queue│◀────│  Trainer  │
+│    (8080)     │     │ trainer.workload    │  Workload │
+│               │     │   .updates    │     │  (8082)   │
+└───────────────┘     └───────────────┘     └───────────┘
+        │                                           │
+   ┌────▼────┐                                 ┌────▼────┐
+   │PostgreSQL│                                │In-Memory│
+   │Database │                                 │   DB    │
+   └─────────┘                                 └─────────┘
 ```
 
 ### Key Features
-- **Microservices Architecture**: Loosely coupled, independently deployable services
-- **Service Discovery**: Eureka Netflix for automatic service registration and discovery
-- **Inter-Service Communication**: OpenFeign with load balancing and circuit breaker patterns
-- **Centralized Authentication**: JWT-based security with service-to-service authentication
-- **API Gateway Ready**: Architecture prepared for API Gateway integration
-- **Fault Tolerance**: Circuit breaker pattern with fallback mechanisms
-- **Scalability**: Each service can be scaled independently
+- **Async Microservices Architecture**: Event-driven, loosely coupled services
+- **Message-Driven Communication**: ActiveMQ for reliable async messaging
+- **Event Sourcing Ready**: Structured event messages for audit trails
+- **Fault Tolerance**: Message persistence and Dead Letter Queue support
+- **JWT Security**: End-to-end authentication including message validation
+- **Scalability**: Services scale independently with message queue buffering
+- **Resilience**: Services can be offline while messages queue safely
 
 ## 🔧 Services
 
-| Service | Port | Purpose | Database      |
-|---------|------|---------|---------------|
-| **Eureka Registry** | 8761 | Service discovery and registration | N/A           |
-| **Main Service** | 8080 | Core gym operations (users, trainers, trainees, trainings) | H2/PostgreSQL |
-| **Trainer Workload Service** | 8082 | Trainer workload calculation and tracking | In Memory DB |
+| Service | Port | Purpose | Database | Communication |
+|---------|------|---------|----------|---------------|
+| **ActiveMQ Broker** | 61616 | Message broker for async communication | N/A | Message Queue |
+| **ActiveMQ Console** | 8161 | Web UI for monitoring queues | N/A | HTTP |
+| **Main Service** | 8080 | Core gym operations (users, trainers, trainees, trainings) | PostgreSQL | REST API + Message Producer |
+| **Trainer Workload Service** | 8082 | Trainer workload calculation and tracking | In-Memory DB | REST API + Message Consumer |
 
 ### Main Service
 - User management (authentication, profiles)
@@ -64,12 +68,20 @@ A comprehensive **Spring Cloud** microservices architecture for managing gym ope
 - Training management (sessions, scheduling)
 - Training types management
 - JWT token generation and validation
+- **Message Publisher**: Sends workload update events
 
 ### Trainer Workload Service
 - Real-time workload calculation
 - Training duration tracking
 - Trainer capacity management
 - Workload analytics and reporting
+- **Message Consumer**: Processes workload update events
+
+### ActiveMQ Broker
+- **Persistent message storage**
+- **Dead Letter Queue** for failed messages
+- **High availability** message delivery
+- **Web console** for monitoring and management
 
 ## 📚 Tech Stack
 
@@ -78,24 +90,24 @@ A comprehensive **Spring Cloud** microservices architecture for managing gym ope
 |------------|---------|
 | **Java 17+** | Programming Language |
 | **Spring Boot 3.x** | Microservice Framework |
-| **Spring Cloud** | Microservices Infrastructure |
+| **Spring JMS** | Java Message Service Integration |
 | **Spring Security** | Authentication & Authorization |
 | **Spring Data JPA** | Data Access Layer |
 
-### Microservices Infrastructure
+### Async Messaging Infrastructure
 | Technology | Purpose |
 |------------|---------|
-| **Eureka Netflix** | Service Discovery |
-| **OpenFeign** | Declarative REST Client |
-| **Spring Cloud LoadBalancer** | Client-side Load Balancing |
-| **Circuit Breaker** | Fault Tolerance |
-| **JWT** | Stateless Authentication |
+| **Apache ActiveMQ Artemis** | Message Broker |
+| **Spring JMS** | Message Producer/Consumer |
+| **Jackson JSR310** | JSON Date/Time Serialization |
+| **JWT** | Message & API Authentication |
+| **Dead Letter Queue** | Failed Message Handling |
 
 ### Data & Documentation
 | Technology | Purpose |
 |------------|---------|
-| **H2 Database** | Development & Testing |
-| **PostgreSQL** | Production Database |
+| **PostgreSQL** | Main Service Database |
+| **H2 Database** | In-Memory DB for Workload Service |
 | **Swagger/OpenAPI 3** | API Documentation |
 | **Spring Boot Actuator** | Health Monitoring |
 
@@ -105,13 +117,14 @@ A comprehensive **Spring Cloud** microservices architecture for managing gym ope
 | **JUnit 5 & Mockito** | Testing Framework |
 | **JaCoCo** | Code Coverage |
 | **Maven** | Build & Dependency Management |
+| **Docker Compose** | Infrastructure Setup |
 
 ## 🛠 Prerequisites
 
 - **Java 17** or higher
 - **Maven 3.6+**
+- **Docker & Docker Compose** (for ActiveMQ & PostgreSQL)
 - **Git**
-- **Docker & Docker Compose** (for PostgreSQL)
 - **IDE** (IntelliJ IDEA recommended)
 
 ## 🚀 Quick Start
@@ -125,78 +138,108 @@ cd gymRest
 mvn clean install
 ```
 
-### 2. Start Services (Recommended Order)
-
-**Option A: Using Maven**
+### 2. Start Infrastructure
 ```bash
-# Terminal 1: Start Eureka Registry
-cd discovery-server
-mvn spring-boot:run
+# Start ActiveMQ and PostgreSQL
+docker-compose up -d
 
-# Terminal 2: Start Main Service (wait for Eureka to be up)
+# Verify ActiveMQ is running
+# Web Console: http://localhost:8161/console (admin/admin)
+```
+
+### 3. Start Services
+
+**Using Maven**
+```bash
+# Terminal 1: Start Main Service
 cd main-service
 mvn spring-boot:run
 
-# Terminal 3: Start Trainer Workload Service
+# Terminal 2: Start Trainer Workload Service
 cd trainer-workload-service
 mvn spring-boot:run
 ```
 
-**Option B: Using JAR files**
+**Using JAR files**
 ```bash
 # Build all services first
 mvn clean package
 
 # Start services
-java -jar eureka-server/target/discovery-server.jar
 java -jar main-service/target/main-service.jar
 java -jar trainer-workload-service/target/trainer-workload-service.jar
 ```
 
-### 3. Verify Deployment
-- **Eureka Dashboard**: http://localhost:8761
+### 4. Verify Deployment
+- **ActiveMQ Console**: http://localhost:8161/console
 - **Main Service Health**: http://localhost:8080/actuator/health
 - **Workload Service Health**: http://localhost:8082/actuator/health
 - **API Documentation**: http://localhost:8080/swagger-ui.html
+- **Message Queue**: Check `trainer.workload.updates` in ActiveMQ console
 
 ## ⚙️ Service Configuration
 
-### Environment Profiles
+### Docker Compose Infrastructure
 
-Each service supports multiple Spring profiles:
-
-| Profile | Database | Use Case |
-|---------|----------|----------|
-| `dev` | H2 (in-memory) | Development |
-| `test` | H2 (in-memory) | Testing |
-| `local` | PostgreSQL | Local development |
-| `deploy` | PostgreSQL | Production |
-
-### Eureka Configuration
-
-**application.yml** (each service):
 ```yaml
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true
+services:
+  postgres:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: jpa_epam
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
 
+  activemq:
+    image: apache/activemq-artemis:latest-alpine
+    ports:
+      - "61616:61616"    # Message broker
+      - "8161:8161"      # Web console
+    environment:
+      ARTEMIS_USER: admin
+      ARTEMIS_PASSWORD: admin
+```
+
+### ActiveMQ Configuration
+
+**Main Service (application.properties)**:
+```properties
+# ActiveMQ Configuration
+spring.artemis.broker-url=tcp://localhost:61616
+spring.artemis.user=admin
+spring.artemis.password=admin
+spring.jms.template.delivery-mode=persistent
+
+# Queue Configuration
+app.queue.trainer-workload=trainer.workload.updates
+```
+
+**Trainer Workload Service (application.yml)**:
+```yaml
 spring:
-  application:
-    name: main-service  # or trainer-workload-service
+  artemis:
+    broker-url: tcp://localhost:61616
+    user: admin
+    password: admin
+  jms:
+    template:
+      delivery-mode: persistent
+
+app:
+  queue:
+    trainer-workload: trainer.workload.updates
 ```
 
 ### JWT Configuration
 
-Both services must share the same JWT secret for authentication:
+Both services share the same JWT secret for message authentication:
 
 **Main Service**:
-```yaml
-jwt:
-  secret: 870fc857a079157a69c5c03a8788a0c4721d90f8fe35476d1bce3609fc2ede4f
-  expiration: 86400000
+```properties
+jwt.secret=870fc857a079157a69c5c03a8788a0c4721d90f8fe35476d1bce3609fc2ede4f
+jwt.expiration=86400000
 ```
 
 **Trainer Workload Service**:
@@ -206,257 +249,282 @@ jwt:
   expiration: 86400000
 ```
 
-### Database Setup
-
-**PostgreSQL with Docker Compose**:
-```bash
-docker-compose up -d  # Start PostgreSQL
-docker-compose down   # Stop and remove
-```
-
 ## 📖 API Documentation
 
 ### Swagger UI Endpoints
 - **Main Service**: http://localhost:8080/swagger-ui.html
-- **Trainer Workload Service**: http://localhost:8081/swagger-ui.html
+- **Trainer Workload Service**: http://localhost:8082/swagger-ui.html
 
-### Main Service Endpoints
+### Main Service REST Endpoints
 
-| Endpoint                            | Description |
-|-------------------------------------|-------------|
-| `POST /api/v1/auth/login`           | User authentication |
-| `GET/POST/PUT/DELETE /api/v1/users` | User management |
-| `GET/POST/PUT /api/v1/trainers`     | Trainer management |
-| `GET/POST/PUT /api/v1/trainees`     | Trainee management |
-| `POST /api/v1/trainings`            | Create training sessions |
-| `GET /api/v1/training-types`        | Training type management |
+| Endpoint | Method | Description |
+|----------|---------|-------------|
+| `/api/v1/auth/login` | POST | User authentication |
+| `/api/v1/users` | GET/POST/PUT/DELETE | User management |
+| `/api/v1/trainers` | GET/POST/PUT | Trainer management |
+| `/api/v1/trainees` | GET/POST/PUT | Trainee management |
+| `/api/v1/trainings` | POST/DELETE | Training sessions (triggers async workload updates) |
+| `/api/v1/training-types` | GET | Training type management |
 
-### Trainer Workload Service Endpoints
+### Trainer Workload Service REST Endpoints
 
-| Endpoint                                   | Description |
-|--------------------------------------------|-------------|
-| `POST /api/v1/workload/add`                | Add training to workload |
-| `GET /api/v1/workload/trainer/{trainerId}` | Get trainer workload |
-| `PUT /api/v1/workload/update`              | Update trainer workload |
+| Endpoint | Method | Description |
+|----------|---------|-------------|
+| `/api/v1/trainers/workload` | POST | Direct workload update (legacy) |
+| `/api/v1/trainers/{username}/workload` | GET | Get trainer workload |
+| `/api/v1/trainers/{username}/workload/{year}/{month}` | GET | Monthly workload |
+| `/api/v1/trainers` | GET | Get all trainers |
+| `/actuator/health` | GET | Service health check |
 
 ## 🔐 Authentication & Security
 
-### JWT Token Structure
+### JWT Token in Messages
+
+Each async message includes JWT authentication:
 ```json
 {
-  "sub": "username",
-  "service": true,        // for service-to-service calls
-  "serviceName": "main-service",
-  "iat": 1234567890,
-  "exp": 1234567890
+  "messageId": "uuid",
+  "messageType": "TRAINER_WORKLOAD_UPDATE",
+  "timestamp": "2025-09-25T10:30:00",
+  "source": "main-service",
+  "authToken": "eyJhbGciOiJIUzI1NiJ9...",
+  "payload": {
+    "trainerUsername": "john.doe",
+    "actionType": "ADD",
+    "trainingDuration": 60
+  }
 }
 ```
 
-### Service-to-Service Authentication
-```java
-// Automatic JWT injection via Feign interceptor
-@FeignClient(name = "trainer-workload-service")
-public interface WorkloadServiceClient {
-    @PostMapping("/api/v1/workload/add")
-    ResponseEntity<String> addWorkload(@RequestBody WorkloadRequest request);
+### Security Layers
+1. **REST API Security**: JWT tokens for HTTP requests
+2. **Message Security**: JWT validation in async messages
+3. **Service Authentication**: Each service validates message sender
+4. **Message Integrity**: Structured message validation
+
+### Authentication Flow
+```
+User Request → JWT Token → Main Service → Async Message (with JWT) → Workload Service
+```
+
+## 📨 Async Messaging
+
+### Message Flow Architecture
+
+```
+Training Created/Deleted → Message Producer → ActiveMQ Queue → Message Consumer → Workload Update
+```
+
+### Message Types
+
+**Trainer Workload Update Event**:
+```json
+{
+  "messageId": "27cae371-28a9-45f8-8675-a815ea65bb59",
+  "messageType": "TRAINER_WORKLOAD_UPDATE",
+  "timestamp": "2025-09-25T22:13:54",
+  "source": "main-service",
+  "authToken": "eyJhbGciOiJIUzI1NiJ9...",
+  "payload": {
+    "trainerUsername": "maria.ramirez",
+    "trainerFirstName": "Maria",
+    "trainerLastName": "Ramirez",
+    "isActive": true,
+    "trainingDate": "2024-09-24",
+    "trainingDuration": 110,
+    "actionType": "ADD"
+  }
 }
 ```
 
-### Security Configuration
-- **Public endpoints**: `/actuator/health`, `/swagger-ui/**`
-- **Protected endpoints**: All `/api/**` routes
-- **Service endpoints**: Require `ROLE_SERVICE` or `ROLE_USER`
+### Queue Configuration
 
-## 🔄 Service Communication
+| Queue Name | Purpose | Consumers | Persistence |
+|------------|---------|-----------|-------------|
+| `trainer.workload.updates` | Workload updates | Trainer Workload Service | Yes |
+| `DLQ.trainer.workload.updates` | Failed messages | Manual/Monitoring | Yes |
 
-### OpenFeign Configuration
+### Dead Letter Queue (DLQ)
 
-**Main Service → Trainer Workload Service**:
-```java
-@FeignClient(
-    name = "trainer-workload-service",
-    fallback = WorkloadServiceFallback.class
-)
-public interface WorkloadServiceClient {
-    @PostMapping("/api/v1/workload/update")
-    ResponseEntity<Void> updateTrainerWorkload(
-        @RequestBody TrainerWorkloadRequest request
-    );
-}
-```
+Handles messages that fail processing:
+- **Invalid message format**
+- **Authentication failures**
+- **Service processing errors**
+- **Automatic retry with exponential backoff**
+- **Manual recovery options**
 
-### Circuit Breaker & Fallback
-```java
-@Component
-public class WorkloadServiceFallback implements WorkloadServiceClient {
-    @Override
-    public ResponseEntity<Void> updateTrainerWorkload(TrainerWorkloadRequest request) {
-        // Fallback logic: queue for retry, send notification, etc.
-        log.error("Workload service unavailable - implementing fallback");
-        return ResponseEntity.ok().build();
-    }
-}
-```
+### Benefits of Async Architecture
 
-### Load Balancing
-Automatic client-side load balancing when multiple service instances are running:
-```bash
-# Start multiple instances of a service
-java -jar trainer-workload-service.jar --server.port=8081
-java -jar trainer-workload-service.jar --server.port=8082
-```
+1. **Resilience**: Services can be offline while messages queue
+2. **Scalability**: Handle traffic spikes with message buffering
+3. **Decoupling**: Services evolve independently
+4. **Reliability**: Message persistence ensures no data loss
+5. **Monitoring**: Track message flow and processing rates
 
 ## 🏥 Monitoring & Health Checks
 
-### Actuator Endpoints
+### ActiveMQ Monitoring
 
-Each service exposes monitoring endpoints:
+**Web Console**: http://localhost:8161/console
+- Queue depths and message rates
+- Consumer connections
+- Dead letter queue monitoring
+- Broker statistics
+
+### Service Health Endpoints
 
 | Endpoint | Description |
 |----------|-------------|
 | `/actuator/health` | Service health status |
 | `/actuator/info` | Service information |
 | `/actuator/metrics` | Performance metrics |
-| `/actuator/eureka` | Eureka registration info |
+| `/actuator/jms` | JMS connection status |
 
-### Service Discovery Health
-Monitor all registered services via Eureka dashboard:
-```
-http://localhost:8761
-```
+### Key Metrics to Monitor
 
-### Health Check URLs
-- **Overall System Health**: Check all services are registered in Eureka
-- **Individual Service Health**:
-    - http://localhost:8080/actuator/health
-    - http://localhost:8082/actuator/health
+- **Message Queue Depth**: Messages waiting to be processed
+- **Consumer Lag**: Time between message send and processing
+- **Dead Letter Queue**: Failed messages requiring attention
+- **Processing Rate**: Messages processed per second
+- **Error Rate**: Failed vs successful message processing
 
 ## ✅ Testing
 
-### Running Tests
+### Testing Async Communication
 
-**All Services**:
+**Message Flow Testing**:
 ```bash
+# 1. Create training (triggers message)
+curl -X POST localhost:8080/api/v1/trainings \
+  -H "Authorization: Bearer <token>" \
+  -d '{"trainerUsername": "john.doe", ...}'
+
+# 2. Check ActiveMQ console for message
+# 3. Verify workload service processed message
+curl localhost:8082/api/v1/trainers/john.doe/workload
+```
+
+### Resilience Testing
+
+**Service Offline Test**:
+```bash
+# 1. Stop trainer-workload service
+# 2. Create training (message queues)
+# 3. Start trainer-workload service
+# 4. Verify queued message is processed
+```
+
+**Running Tests**:
+```bash
+# All services
 mvn clean test
-```
 
-**Specific Service**:
-```bash
-cd main-service
-mvn test
-```
-
-**Integration Testing**:
-```bash
-# Start all services first, then run integration tests
+# Integration tests
 mvn test -Dtest=*IntegrationTest
-```
 
-### Code Coverage
-```bash
-mvn clean test jacoco:report
-open target/site/jacoco/index.html
+# Message testing
+mvn test -Dtest=*MessageTest
 ```
-
-### Contract Testing
-Consider implementing contract testing between services using Spring Cloud Contract or Pact.
 
 ## 🚢 Deployment
 
 ### Docker Deployment
 
-**Build Docker Images**:
-```bash
-# Each service
-docker build -t gym-eureka-server .
-docker build -t gym-main-service .
-docker build -t gym-workload-service .
-```
-
-**Docker Compose**:
+**Complete Stack**:
 ```yaml
 version: '3.8'
 services:
-  eureka-server:
-    image: gym-eureka-server
+  activemq:
+    image: apache/activemq-artemis:latest-alpine
     ports:
-      - "8761:8761"
-  
-  main-service:
-    image: gym-main-service
-    ports:
-      - "8080:8080"
-    depends_on:
-      - eureka-server
-      - postgres
-  
-  trainer-workload-service:
-    image: gym-workload-service
-    ports:
-      - "8081:8081"
-    depends_on:
-      - eureka-server
-      - postgres
-  
+      - "61616:61616"
+      - "8161:8161"
+    environment:
+      ARTEMIS_USER: admin
+      ARTEMIS_PASSWORD: admin
+
   postgres:
     image: postgres:13
     environment:
       POSTGRES_DB: gym_db
       POSTGRES_USER: gym_user
       POSTGRES_PASSWORD: gym_password
+
+  main-service:
+    image: gym-main-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - activemq
+      - postgres
+    environment:
+      SPRING_ARTEMIS_BROKER_URL: tcp://activemq:61616
+
+  trainer-workload-service:
+    image: gym-workload-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - activemq
+    environment:
+      SPRING_ARTEMIS_BROKER_URL: tcp://activemq:61616
 ```
 
 ### Production Considerations
 
-1. **API Gateway**: Add Spring Cloud Gateway for unified entry point
-2. **Config Server**: Externalize configuration with Spring Cloud Config
-3. **Distributed Tracing**: Implement with Sleuth/Zipkin
-4. **Centralized Logging**: ELK Stack or similar
-5. **Service Mesh**: Consider Istio for advanced traffic management
-6. **Database Per Service**: Implement separate databases for each service
+1. **Message Broker Clustering**: ActiveMQ HA setup
+2. **Database Per Service**: Separate databases for data isolation
+3. **Message Monitoring**: Prometheus + Grafana for message metrics
+4. **Log Aggregation**: Centralized logging for message tracing
+5. **Circuit Breakers**: Additional resilience patterns
+6. **Message Versioning**: Schema evolution for message compatibility
 
 ### Scaling
+
+**Horizontal Scaling**:
 ```bash
-# Scale services independently
-docker-compose up --scale main-service=2 --scale trainer-workload-service=3
+# Scale message consumers
+docker-compose up --scale trainer-workload-service=3
+
+# Multiple queue consumers automatically load-balance
 ```
 
 ## 🔮 Future Enhancements
 
-- **API Gateway**: Spring Cloud Gateway integration
-- **Configuration Server**: Centralized configuration management
-- **Message Queues**: RabbitMQ/Kafka for async processing
-- **Caching**: Redis for improved performance
-- **Distributed Tracing**: Request tracing across services
-- **Monitoring**: Prometheus + Grafana dashboards
-- **Security**: OAuth2 + Spring Cloud Security
+- **API Gateway**: Single entry point for REST APIs
+- **Event Sourcing**: Full event history with replay capabilities
+- **CQRS Pattern**: Separate read/write data models
+- **Message Schemas**: Avro or JSON Schema for message validation
+- **Distributed Tracing**: Message correlation across services
+- **Stream Processing**: Real-time analytics with Kafka Streams
+- **Saga Pattern**: Distributed transaction management
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/microservice-enhancement`)
-3. Implement your changes following microservices best practices
-4. Add tests for new functionality
+2. Create a feature branch (`git checkout -b feature/async-enhancement`)
+3. Implement changes following async messaging patterns
+4. Add message testing
 5. Update documentation
-6. Submit a Pull Request
+6. Submit Pull Request
 
 ### Development Guidelines
-- Each service should be independently deployable
-- Maintain backward compatibility in APIs
-- Implement proper circuit breaker patterns
-- Follow 12-factor app principles
-- Add comprehensive testing (unit, integration, contract)
+- Design for async-first communication
+- Implement idempotent message processors
+- Add proper message validation and error handling
+- Follow event-driven architecture principles
+- Test message flows and failure scenarios
 
 ## 📞 Support
 
 For issues, questions, or contributions:
 
 1. Check [Issues](https://github.com/felipemunevarn/gymRest/issues)
-2. Create detailed issue reports
-3. Join discussions on architecture decisions
+2. Create detailed issue reports with message traces
+3. Join discussions on async architecture patterns
 
 ---
 
-**Built with ❤️ using Spring Cloud Microservices** 🚀
+**Built with ❤️ using Async Microservices + ActiveMQ** 🚀
 
-*This microservices architecture provides scalability, fault tolerance, and maintainability for enterprise-grade gym management systems.*
+*This event-driven architecture provides superior scalability, resilience, and maintainability for enterprise gym management systems.*
