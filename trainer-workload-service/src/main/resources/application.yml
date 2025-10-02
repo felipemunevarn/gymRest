@@ -16,6 +16,14 @@ spring:
       write-dates-as-timestamps: false
     deserialization:
       fail-on-unknown-properties: false
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: gym_workload_db
+      authentication-database: admin
+      username: ${MONGO_USERNAME:admin}
+      password: ${MONGO_PASSWORD:admin}
 
 management:
   endpoints:
