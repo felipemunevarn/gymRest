@@ -32,7 +32,7 @@ public class TrainingService {
 
     private final JwtUtil jwtUtil;
 
-    private TrainerWorkloadMessageProducer trainerWorkloadMessageProducer;
+    private final TrainerWorkloadMessageProducer trainerWorkloadMessageProducer;
 
     @Autowired
     public TrainingService(

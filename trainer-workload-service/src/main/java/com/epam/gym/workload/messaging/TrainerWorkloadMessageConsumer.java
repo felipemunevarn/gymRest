@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 import com.epam.gym.workload.service.TrainerWorkloadService;
+import com.epam.gym.workload.service.TrainerTrainingSummaryService;
 
 import java.time.LocalDate;
 
@@ -19,9 +20,11 @@ public class TrainerWorkloadMessageConsumer {
     private static final Logger log = LoggerFactory.getLogger(TrainerWorkloadMessageConsumer.class);
 
     @Autowired
-    private TrainerWorkloadService trainerWorkloadService;
+    private TrainerTrainingSummaryService trainerTrainingSummaryService;
+//    private TrainerWorkloadService trainerWorkloadService;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -32,10 +35,6 @@ public class TrainerWorkloadMessageConsumer {
         String transactionId = "unknown";
 
         try {
-
-            // DEBUG: Log the received JSON message
-            log.info("DEBUG: Received JSON message: {}", jsonMessage);
-
             event = objectMapper.readValue(jsonMessage, TrainerWorkloadEvent.class);
             transactionId = event.getMessageId();
 
@@ -45,15 +44,13 @@ public class TrainerWorkloadMessageConsumer {
                     event.getPayload().getTrainerUsername(),
                     event.getPayload().getActionType());
 
-            // DEBUG: Check authToken after parsing
-            log.info("DEBUG: AuthToken after parsing: {}",
-                    event.getAuthToken() != null ? "Present (" + event.getAuthToken().length() + " chars)" : "NULL");
-
             // SECURITY VALIDATION - Validate JWT token
             if (!validateAuthentication(event, transactionId)) {
                 log.error("SECURITY_VIOLATION - Invalid or missing authentication token, MessageId: {}", transactionId);
                 throw new SecurityException("Invalid authentication token");
             }
+
+            log.info("OPERATION - Authentication validated successfully, MessageId: {}", transactionId);
 
             // Validate message
             if (!isValidWorkloadEvent(event)) {
@@ -61,11 +58,13 @@ public class TrainerWorkloadMessageConsumer {
                 throw new IllegalArgumentException("Required fields missing in workload event");
             }
 
+            log.info("OPERATION - Message validation successful, MessageId: {}", transactionId);
+
             // Convert message to your existing request format
-            WorkloadRequest request = convertEventToRequest(event.getPayload());
+//            WorkloadRequest request = convertEventToRequest(event.getPayload());
 
             // Process using your existing service
-            trainerWorkloadService.processWorkload(request, transactionId);
+            trainerTrainingSummaryService.processTrainingEvent(event.getPayload(), transactionId);
 
             log.info("TRANSACTION_END - Message Consumer: TrainerWorkloadUpdate, " +
                             "MessageId: {}, Status: SUCCESS, Message: Workload updated successfully via messaging",
@@ -77,6 +76,13 @@ public class TrainerWorkloadMessageConsumer {
                     transactionId, e.getMessage(), e);
             // Security violations should not be retried
             // This message will go to DLQ
+            throw e;
+
+        } catch (IllegalArgumentException e) {
+            log.error("TRANSACTION_END - Message Consumer: TrainerWorkloadUpdate, " +
+                            "MessageId: {}, Status: VALIDATION_ERROR, Message: {}",
+                    transactionId, e.getMessage(), e);
+            // Validation errors should not be retried - goes to DLQ
             throw e;
 
         } catch (Exception e) {
@@ -97,17 +103,17 @@ public class TrainerWorkloadMessageConsumer {
                 event.getPayload().getActionType() != null;
     }
 
-    private WorkloadRequest convertEventToRequest(TrainerWorkloadEvent.TrainerWorkloadPayload payload) {
-        return WorkloadRequest.builder()
-                .trainerUsername(payload.getTrainerUsername())
-                .trainerFirstName(payload.getTrainerFirstName())
-                .trainerLastName(payload.getTrainerLastName())
-                .isActive(payload.isActive())
-                .trainingDate(LocalDate.parse(payload.getTrainingDate()))
-                .trainingDuration(payload.getTrainingDuration())
-                .actionType(WorkloadRequest.ActionType.valueOf(payload.getActionType().name()))
-                .build();
-    }
+//    private WorkloadRequest convertEventToRequest(TrainerWorkloadEvent.TrainerWorkloadPayload payload) {
+//        return WorkloadRequest.builder()
+//                .trainerUsername(payload.getTrainerUsername())
+//                .trainerFirstName(payload.getTrainerFirstName())
+//                .trainerLastName(payload.getTrainerLastName())
+//                .isActive(payload.isActive())
+//                .trainingDate(LocalDate.parse(payload.getTrainingDate()))
+//                .trainingDuration(payload.getTrainingDuration())
+//                .actionType(WorkloadRequest.ActionType.valueOf(payload.getActionType().name()))
+//                .build();
+//    }
 
     /**
      * Validates the JWT token in the message
