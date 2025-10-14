@@ -1,6 +1,5 @@
 package com.epam.gym.workload.messaging;
 
-import com.epam.gym.workload.dto.WorkloadRequest;
 import com.epam.gym.workload.security.JwtUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,10 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
-import com.epam.gym.workload.service.TrainerWorkloadService;
 import com.epam.gym.workload.service.TrainerTrainingSummaryService;
-
-import java.time.LocalDate;
 
 @Component
 public class TrainerWorkloadMessageConsumer {
@@ -21,7 +17,6 @@ public class TrainerWorkloadMessageConsumer {
 
     @Autowired
     private TrainerTrainingSummaryService trainerTrainingSummaryService;
-//    private TrainerWorkloadService trainerWorkloadService;
 
     @Autowired
     private ObjectMapper objectMapper;
