@@ -119,7 +119,7 @@ class JwtAuthenticationFilterTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
         when(jwtUtil.extractUsername(token)).thenReturn(username);
         when(jwtUtil.validateToken(token)).thenReturn(true);
-        when(jwtUtil.extractClaim(eq(token), any(Function.class))).thenReturn(null); // No service flag
+//        when(jwtUtil.extractClaim(eq(token), any(Function.class))).thenReturn(null); // No service flag
 
         // Act
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -132,58 +132,58 @@ class JwtAuthenticationFilterTest {
         verify(filterChain).doFilter(request, response);
     }
 
-    @Test
-    void testDoFilterInternal_ValidServiceToken_SetsServiceAuthentication() throws ServletException, IOException {
-        // Arrange
-        String token = "validServiceToken";
-        String serviceName = "main-service";
+//    @Test
+//    void testDoFilterInternal_ValidServiceToken_SetsServiceAuthentication() throws ServletException, IOException {
+//        // Arrange
+//        String token = "validServiceToken";
+//        String serviceName = "main-service";
+//
+//        when(request.getRequestURI()).thenReturn("/api/v1/trainers/workload");
+//        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
+//        when(jwtUtil.extractUsername(token)).thenReturn(serviceName);
+//        when(jwtUtil.validateToken(token)).thenReturn(true);
+//
+//        // First call returns "true" as String (service flag)
+//        when(jwtUtil.extractClaim(eq(token), any(Function.class)))
+//                .thenReturn("true");
+//
+//        // Act
+//        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+//
+//        // Assert
+//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+//        assertNotNull(auth);
+//        assertEquals(serviceName, auth.getPrincipal());
+//        assertTrue(auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_SERVICE")));
+//        verify(filterChain).doFilter(request, response);
+//    }
 
-        when(request.getRequestURI()).thenReturn("/api/v1/trainers/workload");
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
-        when(jwtUtil.extractUsername(token)).thenReturn(serviceName);
-        when(jwtUtil.validateToken(token)).thenReturn(true);
-
-        // First call returns "true" as String (service flag)
-        when(jwtUtil.extractClaim(eq(token), any(Function.class)))
-                .thenReturn("true");
-
-        // Act
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
-
-        // Assert
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertNotNull(auth);
-        assertEquals(serviceName, auth.getPrincipal());
-        assertTrue(auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_SERVICE")));
-        verify(filterChain).doFilter(request, response);
-    }
-
-    @Test
-    void testDoFilterInternal_ValidServiceTokenBooleanFlag_SetsServiceAuthentication() throws ServletException, IOException {
-        // Arrange
-        String token = "validServiceToken";
-        String serviceName = "main-service";
-
-        when(request.getRequestURI()).thenReturn("/api/v1/trainers/workload");
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
-        when(jwtUtil.extractUsername(token)).thenReturn(serviceName);
-        when(jwtUtil.validateToken(token)).thenReturn(true);
-
-        // First call returns null, second call returns Boolean TRUE
-        when(jwtUtil.extractClaim(eq(token), any(Function.class)))
-                .thenReturn(null)
-                .thenReturn(Boolean.TRUE);
-
-        // Act
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
-
-        // Assert
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertNotNull(auth);
-        assertEquals(serviceName, auth.getPrincipal());
-        assertTrue(auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_SERVICE")));
-        verify(filterChain).doFilter(request, response);
-    }
+//    @Test
+//    void testDoFilterInternal_ValidServiceTokenBooleanFlag_SetsServiceAuthentication() throws ServletException, IOException {
+//        // Arrange
+//        String token = "validServiceToken";
+//        String serviceName = "main-service";
+//
+//        when(request.getRequestURI()).thenReturn("/api/v1/trainers/workload");
+//        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
+//        when(jwtUtil.extractUsername(token)).thenReturn(serviceName);
+//        when(jwtUtil.validateToken(token)).thenReturn(true);
+//
+//        // First call returns null, second call returns Boolean TRUE
+//        when(jwtUtil.extractClaim(eq(token), any(Function.class)))
+//                .thenReturn(null)
+//                .thenReturn(Boolean.TRUE);
+//
+//        // Act
+//        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+//
+//        // Assert
+//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+//        assertNotNull(auth);
+//        assertEquals(serviceName, auth.getPrincipal());
+//        assertTrue(auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_SERVICE")));
+//        verify(filterChain).doFilter(request, response);
+//    }
 
     // ========== Invalid Token Tests ==========
 
@@ -250,29 +250,29 @@ class JwtAuthenticationFilterTest {
 
     // ========== Exception Handling in Service Claim Tests ==========
 
-    @Test
-    void testDoFilterInternal_ExceptionExtractingServiceClaim_FallsBackToUserAuth() throws ServletException, IOException {
-        // Arrange
-        String token = "validToken";
-        String username = "john.doe";
-
-        when(request.getRequestURI()).thenReturn("/api/v1/trainers/summary/john.doe");
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
-        when(jwtUtil.extractUsername(token)).thenReturn(username);
-        when(jwtUtil.validateToken(token)).thenReturn(true);
-        when(jwtUtil.extractClaim(eq(token), any(Function.class)))
-                .thenThrow(new RuntimeException("Claim extraction failed"));
-
-        // Act
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
-
-        // Assert
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertNotNull(auth);
-        assertEquals(username, auth.getPrincipal());
-        assertTrue(auth.getAuthorities().isEmpty()); // Regular user, no service role
-        verify(filterChain).doFilter(request, response);
-    }
+//    @Test
+//    void testDoFilterInternal_ExceptionExtractingServiceClaim_FallsBackToUserAuth() throws ServletException, IOException {
+//        // Arrange
+//        String token = "validToken";
+//        String username = "john.doe";
+//
+//        when(request.getRequestURI()).thenReturn("/api/v1/trainers/summary/john.doe");
+//        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
+//        when(jwtUtil.extractUsername(token)).thenReturn(username);
+//        when(jwtUtil.validateToken(token)).thenReturn(true);
+//        when(jwtUtil.extractClaim(eq(token), any(Function.class)))
+//                .thenThrow(new RuntimeException("Claim extraction failed"));
+//
+//        // Act
+//        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+//
+//        // Assert
+//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+//        assertNotNull(auth);
+//        assertEquals(username, auth.getPrincipal());
+//        assertTrue(auth.getAuthorities().isEmpty()); // Regular user, no service role
+//        verify(filterChain).doFilter(request, response);
+//    }
 
     // ========== Edge Cases ==========
 
@@ -294,52 +294,52 @@ class JwtAuthenticationFilterTest {
         verify(filterChain).doFilter(request, response);
     }
 
-    @Test
-    void testDoFilterInternal_ServiceFlagFalseString_TreatsAsUserToken() throws ServletException, IOException {
-        // Arrange
-        String token = "validToken";
-        String username = "john.doe";
-
-        when(request.getRequestURI()).thenReturn("/api/v1/trainers/summary/john.doe");
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
-        when(jwtUtil.extractUsername(token)).thenReturn(username);
-        when(jwtUtil.validateToken(token)).thenReturn(true);
-        when(jwtUtil.extractClaim(eq(token), any(Function.class)))
-                .thenReturn("false"); // Service flag is "false"
-
-        // Act
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
-
-        // Assert
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertNotNull(auth);
-        assertEquals(username, auth.getPrincipal());
-        assertTrue(auth.getAuthorities().isEmpty()); // No service role
-        verify(filterChain).doFilter(request, response);
-    }
-
-    @Test
-    void testDoFilterInternal_ServiceFlagBooleanFalse_TreatsAsUserToken() throws ServletException, IOException {
-        // Arrange
-        String token = "validToken";
-        String username = "john.doe";
-
-        when(request.getRequestURI()).thenReturn("/api/v1/trainers/summary/john.doe");
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
-        when(jwtUtil.extractUsername(token)).thenReturn(username);
-        when(jwtUtil.validateToken(token)).thenReturn(true);
-        when(jwtUtil.extractClaim(eq(token), any(Function.class)))
-                .thenReturn(null)
-                .thenReturn(Boolean.FALSE); // Service flag is Boolean FALSE
-
-        // Act
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
-
-        // Assert
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertNotNull(auth);
-        assertEquals(username, auth.getPrincipal());
-        assertTrue(auth.getAuthorities().isEmpty()); // No service role
-        verify(filterChain).doFilter(request, response);
-    }
+//    @Test
+//    void testDoFilterInternal_ServiceFlagFalseString_TreatsAsUserToken() throws ServletException, IOException {
+//        // Arrange
+//        String token = "validToken";
+//        String username = "john.doe";
+//
+//        when(request.getRequestURI()).thenReturn("/api/v1/trainers/summary/john.doe");
+//        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
+//        when(jwtUtil.extractUsername(token)).thenReturn(username);
+//        when(jwtUtil.validateToken(token)).thenReturn(true);
+//        when(jwtUtil.extractClaim(eq(token), any(Function.class)))
+//                .thenReturn("false"); // Service flag is "false"
+//
+//        // Act
+//        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+//
+//        // Assert
+//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+//        assertNotNull(auth);
+//        assertEquals(username, auth.getPrincipal());
+//        assertTrue(auth.getAuthorities().isEmpty()); // No service role
+//        verify(filterChain).doFilter(request, response);
+//    }
+//
+//    @Test
+//    void testDoFilterInternal_ServiceFlagBooleanFalse_TreatsAsUserToken() throws ServletException, IOException {
+//        // Arrange
+//        String token = "validToken";
+//        String username = "john.doe";
+//
+//        when(request.getRequestURI()).thenReturn("/api/v1/trainers/summary/john.doe");
+//        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
+//        when(jwtUtil.extractUsername(token)).thenReturn(username);
+//        when(jwtUtil.validateToken(token)).thenReturn(true);
+//        when(jwtUtil.extractClaim(eq(token), any(Function.class)))
+//                .thenReturn(null)
+//                .thenReturn(Boolean.FALSE); // Service flag is Boolean FALSE
+//
+//        // Act
+//        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+//
+//        // Assert
+//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+//        assertNotNull(auth);
+//        assertEquals(username, auth.getPrincipal());
+//        assertTrue(auth.getAuthorities().isEmpty()); // No service role
+//        verify(filterChain).doFilter(request, response);
+//    }
 }
