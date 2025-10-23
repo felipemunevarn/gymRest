@@ -55,9 +55,6 @@ public class TrainerWorkloadMessageConsumer {
 
             log.info("OPERATION - Message validation successful, MessageId: {}", transactionId);
 
-            // Convert message to your existing request format
-//            WorkloadRequest request = convertEventToRequest(event.getPayload());
-
             // Process using your existing service
             trainerTrainingSummaryService.processTrainingEvent(event.getPayload(), transactionId);
 
@@ -97,18 +94,6 @@ public class TrainerWorkloadMessageConsumer {
                 event.getPayload().getTrainingDuration() != null &&
                 event.getPayload().getActionType() != null;
     }
-
-//    private WorkloadRequest convertEventToRequest(TrainerWorkloadEvent.TrainerWorkloadPayload payload) {
-//        return WorkloadRequest.builder()
-//                .trainerUsername(payload.getTrainerUsername())
-//                .trainerFirstName(payload.getTrainerFirstName())
-//                .trainerLastName(payload.getTrainerLastName())
-//                .isActive(payload.isActive())
-//                .trainingDate(LocalDate.parse(payload.getTrainingDate()))
-//                .trainingDuration(payload.getTrainingDuration())
-//                .actionType(WorkloadRequest.ActionType.valueOf(payload.getActionType().name()))
-//                .build();
-//    }
 
     /**
      * Validates the JWT token in the message
