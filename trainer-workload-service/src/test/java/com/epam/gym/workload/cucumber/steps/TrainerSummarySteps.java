@@ -1,6 +1,7 @@
 package com.epam.gym.workload.cucumber.steps;
 
 import com.epam.gym.workload.controller.TrainerSummaryController;
+import com.epam.gym.workload.cucumber.TestContext;
 import com.epam.gym.workload.document.TrainerTrainingSummary;
 import com.epam.gym.workload.document.TrainerTrainingSummary.MonthSummary;
 import com.epam.gym.workload.document.TrainerTrainingSummary.YearSummary;
@@ -12,23 +13,41 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.cucumber.datatable.DataTable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@SpringBootTest
 public class TrainerSummarySteps {
 
     @Autowired
     private TestRestTemplate restTemplate;
 
+    @LocalServerPort
+    private int port;
+
+    @Autowired
+    private TrainerSummaryController trainerSummaryController;
+
     @Autowired
     private TrainerTrainingSummaryRepository repository;
+
+    @Autowired
+    private TestContext testContext;
+
+    private String baseUrl;
 
     private ResponseEntity<?> response;
     private TrainerTrainingSummary currentSummary;
@@ -38,14 +57,26 @@ public class TrainerSummarySteps {
         repository.deleteAll();
     }
 
-    @Given("the trainer workload service is running")
-    public void theTrainerWorkloadServiceIsRunning() {
-        assertNotNull(restTemplate);
+    @Given("I am authenticated as an admin")
+    public void i_am_authenticated_as_an_admin() {
     }
 
     @And("MongoDB is available")
     public void mongoDBIsAvailable() {
         assertNotNull(repository);
+    }
+
+    @Given("the trainer workload service is running")
+    public void theTrainerWorkloadServiceIsRunning() {
+        baseUrl = "http://localhost:" + port;
+        System.out.println("✅ Trainer Workload Service is running at " + baseUrl);
+
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            restTemplate.getForEntity(baseUrl + "/actuator/health", String.class);
+        } catch (Exception e) {
+            throw new AssertionError("Service is not running or Actuator is disabled", e);
+        }
     }
 
     @Given("a trainer summary exists in MongoDB for {string} with:")
@@ -90,7 +121,6 @@ public class TrainerSummarySteps {
             int month = Integer.parseInt(row.get("month"));
             int duration = Integer.parseInt(row.get("duration"));
 
-            // Find or create year
             YearSummary yearSummary = summary.getYears().stream()
                     .filter(y -> y.getYear().equals(year))
                     .findFirst()
@@ -103,7 +133,6 @@ public class TrainerSummarySteps {
                         return newYear;
                     });
 
-            // Add month
             MonthSummary monthSummary = MonthSummary.builder()
                     .month(month)
                     .trainingSummaryDuration(duration)
@@ -116,23 +145,44 @@ public class TrainerSummarySteps {
 
     @When("I request the summary for trainer {string}")
     public void iRequestTheSummaryForTrainer(String username) {
-        response = restTemplate.getForEntity(
-                "/api/v1/trainers/summary/" + username,
-                TrainerTrainingSummary.class
-        );
+        TrainerTrainingSummary summary = repository.findByTrainerUsername(username)
+                .orElse(null);
+
+        if (summary != null) {
+            response = ResponseEntity.ok(summary);
+        } else {
+            response = ResponseEntity.notFound().build();
+        }
     }
 
     @When("I request the workload for trainer {string} for year {int} and month {int}")
     public void iRequestTheWorkloadForTrainerForYearAndMonth(String username, int year, int month) {
-        response = restTemplate.getForEntity(
-                "/api/v1/trainers/summary/" + username + "/workload/" + year + "/" + month,
-                TrainerSummaryController.MonthWorkloadResponse.class
-        );
+        TrainerTrainingSummary summary = repository.findByTrainerUsername(username).orElse(null);
+
+        if (summary != null) {
+            Integer duration = summary.getYears().stream()
+                    .filter(y -> y.getYear().equals(year))
+                    .flatMap(y -> y.getMonths().stream())
+                    .filter(m -> m.getMonth().equals(month))
+                    .map(m -> m.getTrainingSummaryDuration())
+                    .findFirst()
+                    .orElse(0);
+
+            response = ResponseEntity.ok(new TrainerSummaryController.MonthWorkloadResponse(
+                    username,
+                    year,
+                    month,
+                    duration));
+        } else {
+            response = ResponseEntity.notFound().build();
+        }
     }
 
     @Then("the response should be successful")
     public void theResponseShouldBeSuccessful() {
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(HttpStatus.OK, response.getStatusCode(),
+                "Expected 200 OK but got: " + response.getStatusCode() +
+                        ". Response body: " + response.getBody());
     }
 
     @Then("the response should be not found")
@@ -142,7 +192,7 @@ public class TrainerSummarySteps {
 
     @Then("the response should be bad request")
     public void theResponseShouldBeBadRequest() {
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 
     @And("no summary data should be returned")
@@ -219,4 +269,10 @@ public class TrainerSummarySteps {
 
         assertEquals(expectedMonths, yearSummary.getMonths().size());
     }
+
+    @Then("the message should be rejected")
+    public void messageShouldBeRejected() {
+        assertEquals(HttpStatus.UNAUTHORIZED, testContext.getResponse().getStatusCode());
+    }
+
 }

@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,7 @@ public class TrainerTrainingSummaryService {
      * @param event The workload event containing training information
      * @param transactionId Transaction ID for logging
      */
+    @Profile("!test")
     @Transactional
     public void processTrainingEvent(@Valid @NotNull TrainerWorkloadEvent.TrainerWorkloadPayload event,
                                      String transactionId) {

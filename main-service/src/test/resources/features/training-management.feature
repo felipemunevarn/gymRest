@@ -1,3 +1,4 @@
+@component @main
 Feature: Training Management
   As a gym administrator
   I want to manage training sessions

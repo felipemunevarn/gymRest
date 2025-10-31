@@ -24,6 +24,17 @@ spring:
       authentication-database: admin
       username: ${MONGO_USERNAME:admin}
       password: ${MONGO_PASSWORD:admin}
+#  autoconfigure:
+#    exclude:
+#      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+#      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+#      - org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration
+#  security:
+#    oauth2:
+#      resourceserver:
+#        jwt:
+#          issuer-uri: http://dummy-issuer
+
 
 management:
   endpoints:

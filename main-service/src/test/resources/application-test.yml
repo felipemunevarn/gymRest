@@ -1,0 +1,20 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  sql:
+    init:
+      mode: never
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+
+app:
+  queue:
+    trainer-workload: trainer.workload.updates
+
+logging:
+   level:
+     org.springframework.jdbc.datasource.init.ScriptUtils: DEBUG
+

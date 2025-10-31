@@ -1,3 +1,4 @@
+@focus
 Feature: Trainer Summary Query
   As a system user
   I want to query trainer training summaries
@@ -66,3 +67,9 @@ Feature: Trainer Summary Query
     Then the response should be successful
     And the summary should contain 2 years
     And year 2024 should contain 2 months
+
+
+  Scenario: Message with invalid JWT token
+    When a workload message is received with invalid authentication
+    Then the message should be rejected
+    And no data should be saved to MongoDB

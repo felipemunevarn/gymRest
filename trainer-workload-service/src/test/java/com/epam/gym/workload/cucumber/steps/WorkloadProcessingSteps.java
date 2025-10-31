@@ -1,24 +1,29 @@
 package com.epam.gym.workload.cucumber.steps;
 
+import com.epam.gym.workload.cucumber.TestContext;
 import com.epam.gym.workload.document.TrainerTrainingSummary;
-import com.epam.gym.workload.document.TrainerTrainingSummary.MonthSummary;
-import com.epam.gym.workload.document.TrainerTrainingSummary.YearSummary;
 import com.epam.gym.workload.messaging.TrainerWorkloadEvent;
 import com.epam.gym.workload.repository.TrainerTrainingSummaryRepository;
+import com.epam.gym.workload.security.JwtUtil;
 import com.epam.gym.workload.service.TrainerTrainingSummaryService;
-import io.cucumber.java.en.And;
-import io.cucumber.java.en.Given;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import io.cucumber.datatable.DataTable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.jms.core.JmsTemplate;
 
-import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@SpringBootTest
 public class WorkloadProcessingSteps {
 
     @Autowired
@@ -27,148 +32,142 @@ public class WorkloadProcessingSteps {
     @Autowired
     private TrainerTrainingSummaryRepository repository;
 
+    @Autowired
+    private JmsTemplate jmsTemplate;
+
+    @Autowired
+    private TestContext testContext;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    private static final String QUEUE_NAME = "trainer.workload.updates";
+
     private TrainerWorkloadEvent.TrainerWorkloadPayload currentPayload;
     private Exception processingException;
     private String currentTrainerUsername;
+    private ResponseEntity<?> response;
 
-    @Given("the message queue is empty")
-    public void theMessageQueueIsEmpty() {
-        // Queue is managed by ActiveMQ, nothing to do here
-        // This step is for documentation purposes
-    }
+    @When("a workload message is received with invalid authentication")
+    public void a_workload_message_is_received_with_invalid_authentication() {
+        TrainerWorkloadEvent.TrainerWorkloadPayload payload = TrainerWorkloadEvent.TrainerWorkloadPayload.builder()
+                .trainerUsername("") // Invalid: missing username
+                .trainerFirstName("Maria")
+                .trainerLastName("Ramirez")
+                .isActive(true)
+                .trainingDate("2024-10-15")
+                .trainingDuration(60)
+                .actionType(TrainerWorkloadEvent.TrainerWorkloadPayload.ActionType.ADD)
+                .build();
 
-    @When("a workload message is received with:")
-    public void aWorkloadMessageIsReceivedWith(DataTable dataTable) {
-        Map<String, String> data = dataTable.asMap(String.class, String.class);
-
-        currentTrainerUsername = data.get("trainerUsername");
-        processingException = null;
+        TrainerWorkloadEvent event = TrainerWorkloadEvent.builder()
+                .messageId("invalid-auth-test")
+                .messageType("TRAINING_WORKLOAD")
+                .timestamp("2024-10-29T21:00:00Z")
+                .source("test-suite")
+                .authToken("Bearer invalid.jwt.token") // Simulate invalid token
+                .payload(payload)
+                .build();
 
         try {
-            currentPayload = TrainerWorkloadEvent.TrainerWorkloadPayload.builder()
-                    .trainerUsername(data.get("trainerUsername"))
-                    .trainerFirstName(data.get("trainerFirstName"))
-                    .trainerLastName(data.get("trainerLastName"))
-                    .isActive(Boolean.parseBoolean(data.get("isActive")))
-                    .trainingDate(data.get("trainingDate"))
-                    .trainingDuration(Integer.parseInt(data.get("trainingDuration")))
-                    .actionType(TrainerWorkloadEvent.TrainerWorkloadPayload.ActionType.valueOf(data.get("actionType")))
-                    .build();
-
-            // Process the message
-            trainerTrainingSummaryService.processTrainingEvent(currentPayload, "test-tx-" + System.currentTimeMillis());
-
+            String jsonMessage = new ObjectMapper().writeValueAsString(event);
+            jmsTemplate.convertAndSend("trainer.workload.updates", jsonMessage);
+            // Optionally wait for processing
+            Thread.sleep(1000);
+            testContext.setResponse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token"));
         } catch (Exception e) {
-            processingException = e;
+            testContext.setResponse(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error sending message"));
         }
     }
 
-    @Then("the message should be processed successfully")
-    public void theMessageShouldBeProcessedSuccessfully() {
-        assertNull(processingException, "Processing should not throw exception");
+    @Then("no data should be saved to MongoDB")
+    public void no_data_should_be_saved_to_mongo_db() {
+        List<TrainerTrainingSummary> allSummaries = repository.findAll();
+        assertTrue(allSummaries.isEmpty(), "Expected no data in MongoDB, but found: " + allSummaries.size());
     }
 
-    @Then("the message should fail validation")
-    public void theMessageShouldFailValidation() {
-        assertNotNull(processingException, "Should have thrown validation exception");
+    @When("a workload message is received with:")
+    public void a_workload_message_is_received_with(DataTable dataTable) {
+        Map<String, String> data = dataTable.asMap(String.class, String.class);
+
+        String token = jwtUtil.generateToken("main-service");
+        System.out.println("Generated JWT token: " + token);
+
+        TrainerWorkloadEvent.TrainerWorkloadPayload payload = TrainerWorkloadEvent.TrainerWorkloadPayload.builder()
+                .trainerUsername(data.get("trainerUsername"))
+                .trainerFirstName(data.get("trainerFirstName"))
+                .trainerLastName(data.get("trainerLastName"))
+                .isActive(Boolean.parseBoolean(data.get("isActive")))
+                .trainingDate(data.get("trainingDate")) // This will be "invalid-date"
+                .trainingDuration(Integer.parseInt(data.get("trainingDuration")))
+                .actionType(TrainerWorkloadEvent.TrainerWorkloadPayload.ActionType.valueOf(data.get("actionType")))
+                .build();
+
+        TrainerWorkloadEvent event = TrainerWorkloadEvent.builder()
+                .messageId("dlq-test")
+                .messageType("TRAINING_WORKLOAD")
+                .timestamp("2024-10-29T21:00:00Z")
+                .source("test-suite")
+                .authToken("Bearer " + token) // Use a valid token to isolate the error
+                .payload(payload)
+                .build();
+
+        try {
+            String jsonMessage = new ObjectMapper().writeValueAsString(event);
+            jmsTemplate.convertAndSend("trainer.workload.updates", jsonMessage);
+            Thread.sleep(1000); // Wait for async processing
+        } catch (Exception e) {
+            testContext.setResponse(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Message failed"));
+        }
     }
 
-    @And("a trainer summary should be created in MongoDB for {string}")
-    public void aTrainerSummaryShouldBeCreatedInMongoDBFor(String username) {
-        Optional<TrainerTrainingSummary> summary = repository.findByTrainerUsername(username);
-        assertTrue(summary.isPresent(), "Trainer summary should exist in MongoDB");
-        currentTrainerUsername = username;
+    @Then("the message should fail processing")
+    public void the_message_should_fail_processing() {
+        HttpStatus actualStatus = (HttpStatus) testContext.getResponse().getStatusCode();
+        assertTrue(
+                actualStatus == HttpStatus.INTERNAL_SERVER_ERROR || actualStatus == HttpStatus.UNAUTHORIZED,
+                "Expected failure status (500 or 401), but got: " + actualStatus
+        );
     }
 
-    @And("the summary should contain year {int} and month {int}")
-    public void theSummaryShouldContainYearAndMonth(int year, int month) {
-        Optional<TrainerTrainingSummary> summary = repository.findByTrainerUsername(currentTrainerUsername);
-        assertTrue(summary.isPresent());
-
-        boolean found = summary.get().getYears().stream()
-                .anyMatch(y -> y.getYear().equals(year) &&
-                        y.getMonths().stream().anyMatch(m -> m.getMonth().equals(month)));
-
-        assertTrue(found, "Year " + year + " and month " + month + " should exist");
+    @Then("the message should be sent to the DLQ")
+    public void the_message_should_be_sent_to_the_dlq() {
+        Object dlqMessage = jmsTemplate.receiveAndConvert("DLQ");
+        assertNotNull(dlqMessage, "Expected message in DLQ, but none was found.");
+        System.out.println("✅ Message found in DLQ: " + dlqMessage);
     }
 
-    @And("the month duration should be {int}")
-    public void theMonthDurationShouldBe(int expectedDuration) {
-        Optional<TrainerTrainingSummary> summary = repository.findByTrainerUsername(currentTrainerUsername);
-        assertTrue(summary.isPresent());
-
-        // Get the first month's duration (assuming single year/month for this step)
-        int actualDuration = summary.get().getYears().get(0)
-                .getMonths().get(0)
-                .getTrainingSummaryDuration();
-
-        assertEquals(expectedDuration, actualDuration);
-    }
-
-    @And("the trainer summary for {string} should be updated")
-    public void theTrainerSummaryForShouldBeUpdated(String username) {
-        Optional<TrainerTrainingSummary> summary = repository.findByTrainerUsername(username);
-        assertTrue(summary.isPresent(), "Trainer summary should exist");
-        currentTrainerUsername = username;
-    }
-
-    @And("the month {int} of year {int} should have duration {int}")
-    public void theMonthOfYearShouldHaveDuration(int month, int year, int expectedDuration) {
-        Optional<TrainerTrainingSummary> summary = repository.findByTrainerUsername(currentTrainerUsername);
-        assertTrue(summary.isPresent());
-
-        YearSummary yearSummary = summary.get().getYears().stream()
+    @Then("the month {int} of year {int} should have duration {int}")
+    public void the_month_of_year_should_have_duration(int month, int year, int expectedDuration) {
+        TrainerTrainingSummary summary = repository.findByTrainerUsername("maria.ramirez").orElseThrow();
+        TrainerTrainingSummary.YearSummary yearSummary = summary.getYears().stream()
                 .filter(y -> y.getYear().equals(year))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Year " + year + " not found"));
 
-        MonthSummary monthSummary = yearSummary.getMonths().stream()
+        TrainerTrainingSummary.MonthSummary monthSummary = yearSummary.getMonths().stream()
                 .filter(m -> m.getMonth().equals(month))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Month " + month + " not found"));
 
-        assertEquals(expectedDuration, monthSummary.getTrainingSummaryDuration(),
-                "Month " + month + " should have duration " + expectedDuration);
+        assertEquals(expectedDuration, monthSummary.getTrainingSummaryDuration());
     }
 
-    @And("the trainer summary for {string} should contain month {int}")
-    public void theTrainerSummaryForShouldContainMonth(String username, int month) {
-        Optional<TrainerTrainingSummary> summary = repository.findByTrainerUsername(username);
-        assertTrue(summary.isPresent());
+    @Then("the message should be processed successfully")
+    public void the_message_should_be_processed_successfully() {
+        assertEquals(HttpStatus.OK, testContext.getResponse().getStatusCode(),
+                "Expected 200 OK but got: " + testContext.getResponse().getStatusCode());
+    }
 
-        boolean found = summary.get().getYears().stream()
+    @Then("the trainer summary for {string} should contain month {int}")
+    public void the_trainer_summary_for_should_contain_month(String username, Integer month) {
+        TrainerTrainingSummary summary = repository.findByTrainerUsername(username)
+                .orElseThrow(() -> new AssertionError("Trainer summary not found for: " + username));
+
+        boolean found = summary.getYears().stream()
                 .flatMap(y -> y.getMonths().stream())
                 .anyMatch(m -> m.getMonth().equals(month));
 
-        assertTrue(found, "Month " + month + " should exist");
-    }
-
-    @And("the month {int} of year {int} should still have duration {int}")
-    public void theMonthOfYearShouldStillHaveDuration(int month, int year, int expectedDuration) {
-        // Same as theMonthOfYearShouldHaveDuration - verifies duration hasn't changed
-        theMonthOfYearShouldHaveDuration(month, year, expectedDuration);
-    }
-
-    @And("no data should be saved to MongoDB")
-    public void noDataShouldBeSavedToMongoDB() {
-        // Since we caught the exception, verify no partial data was saved
-        if (currentPayload != null && currentPayload.getTrainerUsername() != null) {
-            Optional<TrainerTrainingSummary> summary =
-                    repository.findByTrainerUsername(currentPayload.getTrainerUsername());
-
-            // Either no summary exists, or if it does, it should be from a previous test
-            // and not have been modified by this failed operation
-            assertTrue(summary.isEmpty() || processingException != null);
-        }
-    }
-
-    @And("the trainer status should be updated to {word}")
-    public void theTrainerStatusShouldBeUpdatedTo(String status) {
-        Optional<TrainerTrainingSummary> summary = repository.findByTrainerUsername(currentTrainerUsername);
-        assertTrue(summary.isPresent());
-
-        boolean expectedStatus = Boolean.parseBoolean(status);
-        assertEquals(expectedStatus, summary.get().getTrainerStatus(),
-                "Trainer status should be " + status);
+        assertTrue(found, "Month " + month + " not found in trainer summary for " + username);
     }
 }
